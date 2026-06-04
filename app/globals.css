@@ -29,6 +29,9 @@ h1{font-size:24px;font-weight:700;letter-spacing:-.02em;color:var(--ink)}
 #prog{stroke:var(--g-strong)}
 
 .composer{position:relative;background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:30px}
+/* 폼 강조용: 카드 뒤 아주 약한 파란 radial 글로우 */
+.composer::before{content:"";position:absolute;inset:-46px -38px -34px;z-index:-1;border-radius:40px;background:radial-gradient(72% 82% at 50% 34%, rgba(49,130,246,.16), rgba(49,130,246,.055) 48%, transparent 74%);filter:blur(10px);pointer-events:none}
+:root[data-theme="dark"] .composer::before{background:radial-gradient(72% 82% at 50% 34%, rgba(63,142,252,.22), rgba(63,142,252,.08) 48%, transparent 74%)}
 .title-in{width:100%;border:1px solid var(--line);background:var(--paper);font-family:var(--sans);font-size:16px;font-weight:600;color:var(--ink);padding:11px 13px;margin-bottom:9px;border-radius:10px;transition:border-color .15s,box-shadow .15s}
 .title-in::placeholder{color:var(--faint)} .title-in:focus{outline:none;border-color:var(--faint)}
 .title-in.err{border-color:var(--danger);box-shadow:0 0 0 2px rgba(240,68,82,.18);background:rgba(240,68,82,.04)}
@@ -168,11 +171,7 @@ ul.list.cards .task{margin-bottom:0}
 /* ===== 생성/수정 착지 팝 ===== */
 .flychip{border-radius:9px;background:linear-gradient(145deg,var(--accent),var(--accent-press));box-shadow:0 8px 22px -4px rgba(49,130,246,.55),0 2px 7px rgba(0,0,0,.2);position:relative}
 .flychip::after{content:"";position:absolute;inset:5px;border-radius:5px;background:rgba(255,255,255,.22)}
-@keyframes landRing{
-  0%{box-shadow:0 0 0 2px var(--accent),0 12px 30px -14px rgba(49,130,246,.4)}
-  100%{box-shadow:0 0 0 0 rgba(49,130,246,0),0 0 0 0 rgba(0,0,0,0)}
-}
-.just-landed{animation:landRing 1.1s cubic-bezier(.4,0,.2,1);position:relative;z-index:2}
+.just-landed{position:relative;z-index:2}
 .cv-bar.just-landed{z-index:6}
 
 /* ===== 대시보드 ===== */
