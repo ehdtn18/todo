@@ -784,3 +784,38 @@ header{animation:fadeUp .28s var(--ease)}
 
 /* 슬래시 메뉴를 조금 더 넓게 (단축키 칸 확보) */
 .slash{width:268px}
+
+/* ===== 인증 화면 ===== */
+.authscreen{background:var(--bg);align-items:center;overflow:auto}
+.authcard{background:var(--paper);border:1px solid var(--line);border-radius:20px;padding:30px 26px;width:100%;max-width:380px;box-shadow:0 24px 60px -24px rgba(0,0,0,.2);animation:fadeUp .3s var(--ease)}
+.auth-brand{text-align:center;margin-bottom:20px}
+.auth-kicker{font-size:11px;font-weight:700;letter-spacing:.12em;color:var(--accent)}
+.auth-brand h2{font-size:24px;font-weight:800;color:var(--ink);margin-top:4px}
+.auth-tabs{width:100%;margin-bottom:16px}
+.auth-tabs button{flex:1;justify-content:center}
+.auth-form{display:flex;flex-direction:column;gap:9px}
+.auth-in{border:1px solid var(--line);border-radius:11px;padding:12px 13px;font-size:14.5px;font-family:var(--sans);color:var(--ink);background:var(--paper);outline:none;transition:border-color .15s,box-shadow .15s}
+.auth-in:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-bg)}
+select.auth-in{cursor:pointer}
+.auth-submit{width:100%;margin-top:6px;padding:13px}
+.auth-err{margin-top:11px;font-size:13px;color:var(--danger);text-align:center;min-height:18px;font-weight:500}
+
+/* ===== 헤더 유저칩 ===== */
+.userchip{display:none;align-items:center;gap:5px;font-size:12.5px;font-weight:600;color:var(--ink2);background:var(--chip);border-radius:99px;padding:6px 12px;white-space:nowrap;max-width:170px;overflow:hidden;text-overflow:ellipsis}
+
+/* ===== 보기 대상 필터 버튼 ===== */
+.viewas{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--paper);color:var(--ink2);border-radius:10px;padding:7px 11px;font-size:13px;font-weight:600;cursor:pointer;transition:border-color .15s,color .15s,background .15s,transform .1s var(--ease)}
+.viewas:hover{border-color:var(--g-weak);color:var(--ink)} .viewas:active{transform:scale(.97)}
+.viewas.active{border-color:var(--accent);color:var(--accent);background:var(--accent-bg)}
+.viewas .va-caret{opacity:.6}
+.viewpop .vp-sub{font-size:11px;color:var(--faint);font-weight:500;margin-left:6px}
+.viewpop .vp-teamhd{font-weight:700;color:var(--ink);margin-top:4px}
+.viewpop .vp-mem{padding-left:24px;font-size:13px;color:var(--ink2)}
+.viewpop .vp-me{font-weight:700}
+
+/* ===== 보기 전용 배너 ===== */
+.ro-banner{display:none;align-items:center;justify-content:space-between;gap:10px;background:var(--accent-bg);border:1px solid var(--accent);border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:13.5px;font-weight:600;color:var(--accent)}
+.ro-banner .ro-txt{display:flex;align-items:center;gap:6px}
+.ro-banner .ro-clear{border:none;background:var(--accent);color:#fff;border-radius:8px;padding:6px 12px;font-size:12.5px;font-weight:700;cursor:pointer}
+.ro-banner .ro-clear:hover{filter:brightness(1.05)}
+@media(max-width:560px){ .userchip{max-width:110px} .viewas span#viewAsLabel{max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap} }
