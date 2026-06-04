@@ -58,7 +58,6 @@ const SHELL_HTML = `
       <button data-v="dash">대시보드</button>
     </div>
     <button class="viewas" id="viewAsBtn" title="보기 대상 (팀/팀원)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg><span id="viewAsLabel">내 할일</span><svg class="va-caret" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg></button>
-    <button class="viewclear" id="viewClearBtn" title="내 할일로 돌아가기" style="display:none"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 010 10h-1"/></svg>내 할일로</button>
     <span class="spacer"></span>
     <div class="seg icon-seg" id="listLayoutSeg" style="display:none">
       <button class="on" data-ll="rows" title="리스트형"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
@@ -83,6 +82,7 @@ const SHELL_HTML = `
 
   <div class="sortpop viewpop" id="viewPop">
     <div class="sortpop-list" id="viewPopList"></div>
+    <button class="sortpop-reset" id="viewReset" style="display:none"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 109-9 9 9 0 00-6.4 2.6L3 8"/><path d="M3 3v5h5"/></svg>내 할일로 초기화</button>
   </div>
 
   <div class="overlay" id="helpModal">
@@ -354,7 +354,6 @@ function runApp(signal, created) {
     const me=viewTarget.type==="me";
     $("viewAsLabel").textContent=me?"내 할일":viewLabel()+" (보기전용)";
     $("viewAsBtn").classList.toggle("active",!me);
-    const clr=$("viewClearBtn");if(clr)clr.style.display=me?"none":"inline-flex";
   }
   function applyReadOnly(){
     const comp=document.querySelector(".composer");if(comp)comp.style.display=readOnly?"none":"";
@@ -375,19 +374,20 @@ function runApp(signal, created) {
   function viewPopOpen(){return $("viewPop").classList.contains("open");}
   function positionViewPop(){const r=$("viewAsBtn").getBoundingClientRect();const p=$("viewPop");const pw=p.offsetWidth||260;let left=r.left,top=r.bottom+8;if(left+pw>window.innerWidth-8)left=window.innerWidth-8-pw;if(left<8)left=8;p.style.left=left+"px";p.style.top=top+"px";const ph=p.offsetHeight;if(top+ph>window.innerHeight-8){const nt=r.top-ph-8;p.style.top=(nt<8?8:nt)+"px";}}
   function renderViewPop(){
-    let h='<button class="sortopt vp-me'+(viewTarget.type==="me"?" sel":"")+'" data-vt="me">내 할일'+(currentUser?' <span class="vp-sub">'+esc(currentUser.name)+'</span>':"")+'</button>';
+    let h='';
     const byTeam={};allUsers.forEach(function(u){(byTeam[u.team]=byTeam[u.team]||[]).push(u);});
     Object.keys(byTeam).forEach(function(team){
       h+='<button class="sortopt vp-teamhd'+(viewTarget.type==="team"&&viewTarget.team===team?" sel":"")+'" data-vt="team" data-team="'+esc(team)+'">'+esc(team)+' <span class="vp-sub">'+byTeam[team].length+'명 · 전체</span></button>';
       byTeam[team].forEach(function(u){const self=currentUser&&u.id===currentUser.id;const sel=self?viewTarget.type==="me":(viewTarget.type==="user"&&viewTarget.id===u.id);h+='<button class="sortopt vp-mem'+(sel?" sel":"")+'" data-vt="user" data-uid="'+esc(u.id)+'" data-name="'+esc(u.name)+'">'+esc(u.name)+(self?' <span class="vp-sub">나</span>':"")+'</button>';});
     });
     $("viewPopList").innerHTML=h;
+    const rb=$("viewReset");if(rb)rb.style.display=viewTarget.type==="me"?"none":"flex";
   }
   function openViewPop(){renderViewPop();$("viewPop").classList.add("open");positionViewPop();}
   function closeViewPop(){$("viewPop").classList.remove("open");}
   $("viewAsBtn").onclick=function(e){e.stopPropagation();if(viewPopOpen())closeViewPop();else openViewPop();};
   $("viewPopList").addEventListener("click",function(e){const b=e.target.closest("[data-vt]");if(!b)return;const t=b.dataset.vt;if(t==="me")selectView({type:"me"});else if(t==="team")selectView({type:"team",team:b.dataset.team});else if(t==="user"){if(currentUser&&b.dataset.uid===currentUser.id)selectView({type:"me"});else selectView({type:"user",id:b.dataset.uid,name:b.dataset.name});}});
-  $("viewClearBtn").onclick=function(){selectView({type:"me"});};
+  $("viewReset").onclick=function(){selectView({type:"me"});};
   document.addEventListener("mousedown",function(e){if(viewPopOpen()&&!$("viewPop").contains(e.target)&&!$("viewAsBtn").contains(e.target))closeViewPop();},{signal});
   window.addEventListener("resize",function(){if(viewPopOpen())positionViewPop();},{signal});
 

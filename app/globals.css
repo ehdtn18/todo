@@ -808,8 +808,7 @@ select.auth-in{cursor:pointer}
 .viewas:hover{border-color:var(--g-weak);color:var(--ink)} .viewas:active{transform:scale(.97)}
 .viewas.active{border-color:var(--accent);color:var(--accent);background:var(--accent-bg)}
 .viewas .va-caret{opacity:.6}
-.viewclear{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line);background:var(--paper);color:var(--soft);border-radius:10px;padding:7px 11px;font-size:13px;font-weight:600;cursor:pointer;transition:border-color .15s,color .15s,transform .1s var(--ease)}
-.viewclear:hover{border-color:var(--g-weak);color:var(--ink2)} .viewclear:active{transform:scale(.97)}
+.viewpop .sortpop-list{max-height:720px}
 .viewpop .vp-sub{font-size:11px;color:var(--faint);font-weight:500;margin-left:6px}
 .viewpop .vp-teamhd{font-weight:700;color:var(--ink);margin-top:4px}
 .viewpop .vp-mem{padding-left:24px;font-size:13px;color:var(--ink2)}
