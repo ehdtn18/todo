@@ -7,7 +7,7 @@
 **To-do APP v.2** — Next.js + MySQL 기반 할 일 관리 웹 애플리케이션.
 
 `REFERENCE/index.html`(바닐라 JS 단일 파일, 토스 스타일 디자인)을 Next.js로 이식한 프로젝트.
-**로컬 단독 사용 전용**이며 로그인/인증 기능은 없다. 단일 사용자가 하나의 `tasks` 테이블을 사용한다.
+**다중 사용자(로그인/회원가입)** 지원: bcrypt 해시 + HMAC 토큰 쿠키(`lib/auth.js`, `AUTH_SECRET`). `users` 테이블이 있고 `tasks`/`trash`/`leaves`/`settings`는 `owner`(유저 id)로 분리된다(쓰기는 본인만, 팀/팀원 할일은 보기 전용 조회). 팀: 기획팀·경영지원팀·개발팀·디자인팀·MD팀. 초기 로드는 `/api/bootstrap`(단일 요청·병렬 쿼리). Vercel 배포(`vercel.json` 리전 `icn1`) + TiDB Cloud MySQL. 계정/데이터 셋업은 `scripts/setup-auth.mjs`(비번은 env 주입), 더미 정리는 `scripts/delete-dummies.mjs`.
 
 ## 기술 스택
 
