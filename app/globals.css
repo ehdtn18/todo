@@ -817,6 +817,8 @@ header{animation:fadeUp .28s var(--ease)}
 .auth-tabs{width:100%;margin-bottom:16px}
 .auth-tabs button{flex:1;justify-content:center}
 .auth-form{display:flex;flex-direction:column;gap:9px}
+.auth-row{display:flex;gap:9px}
+.auth-row .auth-in{flex:1;min-width:0}
 .auth-in{border:1px solid var(--line);border-radius:11px;padding:12px 13px;font-size:14.5px;font-family:var(--sans);color:var(--ink);background:var(--paper);outline:none;transition:border-color .15s,box-shadow .15s}
 .auth-in:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-bg)}
 select.auth-in{cursor:pointer}
@@ -824,8 +826,10 @@ select.auth-in{cursor:pointer}
 .auth-err{margin-top:11px;font-size:13px;color:var(--danger);text-align:center;min-height:18px;font-weight:500}
 
 /* ===== 헤더 유저칩 ===== */
-.userchip{display:none;align-items:center;gap:5px;font-size:12.5px;font-weight:600;color:var(--ink2);background:var(--chip);border:none;border-radius:99px;padding:6px 12px;white-space:nowrap;max-width:170px;overflow:hidden;text-overflow:ellipsis;cursor:pointer;transition:background .15s,color .15s}
-.userchip:hover{background:var(--g-weak);color:var(--ink)}
+.userchip{display:none;align-items:center;gap:6px;height:38px;font-size:12.5px;font-weight:600;color:var(--ink2);background:var(--paper);border:1px solid var(--line);border-radius:11px;padding:0 12px;white-space:nowrap;max-width:200px;cursor:pointer;transition:border-color .15s,color .15s,background .15s,transform .1s var(--ease)}
+.userchip:hover{border-color:var(--g-weak);color:var(--ink)} .userchip:active{transform:scale(.96)}
+.userchip .uc-ic{flex-shrink:0;color:var(--soft)}
+.userchip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
 /* ===== 보기 대상 필터 버튼 ===== */
 .viewas{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--paper);color:var(--ink2);border-radius:10px;padding:7px 11px;font-size:13px;font-weight:600;cursor:pointer;transition:border-color .15s,color .15s,background .15s,transform .1s var(--ease)}
@@ -843,4 +847,4 @@ select.auth-in{cursor:pointer}
 .viewpop .vp-mem{padding-left:24px;font-size:13px;color:var(--ink2)}
 .viewpop .vp-me{font-weight:700}
 
-@media(max-width:560px){ .userchip{max-width:110px} .viewas span#viewAsLabel{max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap} }
+@media(max-width:560px){ .userchip{max-width:120px;height:34px} .viewas span#viewAsLabel{max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap} }

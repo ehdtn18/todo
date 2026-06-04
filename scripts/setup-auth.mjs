@@ -10,12 +10,12 @@ import { hashPw, uid } from "../lib/auth.js";
 const PRIMARY_PW = process.env.PRIMARY_PW;
 const DUMMY_PW = process.env.DUMMY_PW || "test1234!";
 if (!PRIMARY_PW) { console.error("PRIMARY_PW 환경변수가 필요해요 (강동수 계정 비밀번호)"); process.exit(1); }
-const OWNER_PRIMARY = { email: "kds@careid.center", name: "강동수", team: "디자인팀", pw: PRIMARY_PW };
+const OWNER_PRIMARY = { email: "kds@careid.center", name: "강동수", first: "동수", team: "디자인팀", pw: PRIMARY_PW };
 const DUMMIES = [
-  { email: "dajeong@careid.center", name: "다정", team: "기획팀", pw: DUMMY_PW },
-  { email: "sumin@careid.center", name: "수민", team: "기획팀", pw: DUMMY_PW },
-  { email: "jaehyuk@careid.center", name: "재혁", team: "개발팀", pw: DUMMY_PW },
-  { email: "yunji@careid.center", name: "윤지", team: "디자인팀", pw: DUMMY_PW },
+  { email: "dajeong@careid.center", name: "이다정", first: "다정", team: "기획팀", pw: DUMMY_PW },
+  { email: "sumin@careid.center", name: "안수민", first: "수민", team: "기획팀", pw: DUMMY_PW },
+  { email: "jaehyuk@careid.center", name: "최재혁", first: "재혁", team: "개발팀", pw: DUMMY_PW },
+  { email: "yunji@careid.center", name: "남윤지", first: "윤지", team: "디자인팀", pw: DUMMY_PW },
 ];
 
 const pad = (n) => String(n).padStart(2, "0");
@@ -26,8 +26,8 @@ async function upsertUser(pool, u) {
   if (ex.length) return ex[0].id;
   const id = uid();
   const hash = await hashPw(u.pw);
-  await pool.query("INSERT INTO users (id, email, pw_hash, name, team, created) VALUES (?,?,?,?,?,?)",
-    [id, u.email, hash, u.name, u.team, Date.now()]);
+  await pool.query("INSERT INTO users (id, email, pw_hash, name, first_name, team, created) VALUES (?,?,?,?,?,?,?)",
+    [id, u.email, hash, u.name, u.first || u.name, u.team, Date.now()]);
   return id;
 }
 

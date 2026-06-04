@@ -10,10 +10,10 @@ export async function GET(req) {
     const a = getAuth(req);
     if (!a) return NextResponse.json({ user: null });
     await ensureSchema();
-    const [rows] = await getPool().query("SELECT id, email, name, team FROM users WHERE id=?", [a.uid]);
+    const [rows] = await getPool().query("SELECT id, email, name, first_name, team FROM users WHERE id=?", [a.uid]);
     if (!rows.length) return NextResponse.json({ user: null });
     const u = rows[0];
-    return NextResponse.json({ user: { id: u.id, email: u.email, name: u.name, team: u.team } });
+    return NextResponse.json({ user: { id: u.id, email: u.email, name: u.name, firstName: u.first_name || u.name, team: u.team } });
   } catch (e) {
     console.error("me failed:", e);
     return NextResponse.json({ user: null });

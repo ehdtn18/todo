@@ -118,7 +118,7 @@ const SHELL_HTML = `
       <input type="email" id="rgEmail" class="auth-in" placeholder="이메일" autocomplete="username">
       <input type="password" id="rgPw" class="auth-in" placeholder="비밀번호 (6자 이상)" autocomplete="new-password">
       <input type="password" id="rgPw2" class="auth-in" placeholder="비밀번호 확인" autocomplete="new-password">
-      <input type="text" id="rgName" class="auth-in" placeholder="이름">
+      <div class="auth-row"><input type="text" id="rgLast" class="auth-in" placeholder="성" autocomplete="family-name"><input type="text" id="rgFirst" class="auth-in" placeholder="이름" autocomplete="given-name"></div>
       <select id="rgTeam" class="auth-in"><option value="">팀 선택</option><option>기획팀</option><option>경영지원팀</option><option>개발팀</option><option>디자인팀</option><option>MD팀</option></select>
       <button type="submit" class="btn-primary auth-submit" id="rgBtn">회원가입</button>
     </form>
@@ -348,7 +348,9 @@ function runApp(signal, created) {
   }
   function showAuth(){$("authScreen").classList.add("open");}
   function hideAuth(){$("authScreen").classList.remove("open");}
-  function paintUser(){const c=$("userChip");if(currentUser){c.textContent=currentUser.name+" · "+currentUser.team;c.style.display="inline-flex";}else{c.style.display="none";}}
+  function dispName(u){return u?(u.firstName||u.name||""):"";}
+  const USER_ICON='<svg class="uc-ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.4"/><path d="M5 20v-1a5 5 0 015-5h4a5 5 0 015 5v1"/></svg>';
+  function paintUser(){const c=$("userChip");if(currentUser){c.innerHTML=USER_ICON+'<span>'+esc(dispName(currentUser))+' · '+esc(currentUser.team)+'</span>';c.style.display="inline-flex";}else{c.style.display="none";}}
   async function boot(){
     let data=null;
     try{const r=await fetch("/api/bootstrap",{cache:"no-store"});if(r.ok)data=await r.json();}catch(e){}
@@ -366,12 +368,12 @@ function runApp(signal, created) {
   function authErr(m){$("authErr").textContent=m||"";}
   document.querySelectorAll("#authTabs button").forEach(function(b){b.onclick=function(){document.querySelectorAll("#authTabs button").forEach(x=>x.classList.toggle("on",x===b));const reg=b.dataset.at==="register";$("authLogin").style.display=reg?"none":"flex";$("authRegister").style.display=reg?"flex":"none";authErr("");};});
   $("authLogin").addEventListener("submit",async function(e){e.preventDefault();authErr("");const email=$("liEmail").value.trim(),password=$("liPw").value;if(!email||!password){authErr("이메일과 비밀번호를 입력하세요");return;}$("liBtn").disabled=true;try{const r=await fetch("/api/auth/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email:email,password:password})});const j=await r.json();if(!r.ok){authErr(j.error||"로그인 실패");return;}await boot();}catch(err){authErr("네트워크 오류");}finally{$("liBtn").disabled=false;}});
-  $("authRegister").addEventListener("submit",async function(e){e.preventDefault();authErr("");const email=$("rgEmail").value.trim(),password=$("rgPw").value,pw2=$("rgPw2").value,name=$("rgName").value.trim(),team=$("rgTeam").value;if(!email||!password||!name||!team){authErr("모든 항목을 입력하세요");return;}if(password!==pw2){authErr("비밀번호가 일치하지 않아요");return;}if(password.length<6){authErr("비밀번호는 6자 이상이어야 해요");return;}$("rgBtn").disabled=true;try{const r=await fetch("/api/auth/register",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email:email,password:password,name:name,team:team})});const j=await r.json();if(!r.ok){authErr(j.error||"회원가입 실패");return;}await boot();}catch(err){authErr("네트워크 오류");}finally{$("rgBtn").disabled=false;}});
+  $("authRegister").addEventListener("submit",async function(e){e.preventDefault();authErr("");const email=$("rgEmail").value.trim(),password=$("rgPw").value,pw2=$("rgPw2").value,lastName=$("rgLast").value.trim(),firstName=$("rgFirst").value.trim(),team=$("rgTeam").value;if(!email||!password||!lastName||!firstName||!team){authErr("모든 항목을 입력하세요");return;}if(password!==pw2){authErr("비밀번호가 일치하지 않아요");return;}if(password.length<6){authErr("비밀번호는 6자 이상이어야 해요");return;}$("rgBtn").disabled=true;try{const r=await fetch("/api/auth/register",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email:email,password:password,lastName:lastName,firstName:firstName,team:team})});const j=await r.json();if(!r.ok){authErr(j.error||"회원가입 실패");return;}await boot();}catch(err){authErr("네트워크 오류");}finally{$("rgBtn").disabled=false;}});
 
   // ===== 보기 대상(팀/팀원) 필터 — 보기 전용 =====
   function viewLabel(){if(viewTarget.type==="user")return viewTarget.name;if(viewTarget.type==="team")return viewTarget.team;return "내 할일";}
   // 팀 보기일 때 각 task 소유자 표시
-  function ownerName(id){if(!id)return"";if(currentUser&&id===currentUser.id)return currentUser.name;const u=allUsers.find(function(x){return x.id===id;});return u?u.name:"";}
+  function ownerName(id){if(!id)return"";if(currentUser&&id===currentUser.id)return dispName(currentUser);const u=allUsers.find(function(x){return x.id===id;});return u?dispName(u):"";}
   function ownerBadge(t){if(viewTarget.type==="me")return"";const n=ownerName(t.owner);if(!n)return"";const mine=currentUser&&t.owner===currentUser.id;return '<span class="ownerbadge'+(mine?" me":"")+'">'+esc(n)+'</span>';}
   function ownerTag(t){if(viewTarget.type==="me")return"";const n=ownerName(t.owner);return n?n+" · ":"";}
   function updateViewAs(){
@@ -402,7 +404,7 @@ function runApp(signal, created) {
     const byTeam={};allUsers.forEach(function(u){(byTeam[u.team]=byTeam[u.team]||[]).push(u);});
     Object.keys(byTeam).forEach(function(team){
       h+='<button class="sortopt vp-teamhd'+(viewTarget.type==="team"&&viewTarget.team===team?" sel":"")+'" data-vt="team" data-team="'+esc(team)+'">'+esc(team)+' <span class="vp-sub">'+byTeam[team].length+'명 · 전체</span></button>';
-      byTeam[team].forEach(function(u){const self=currentUser&&u.id===currentUser.id;const sel=self?viewTarget.type==="me":(viewTarget.type==="user"&&viewTarget.id===u.id);h+='<button class="sortopt vp-mem'+(sel?" sel":"")+'" data-vt="user" data-uid="'+esc(u.id)+'" data-name="'+esc(u.name)+'">'+esc(u.name)+(self?' <span class="vp-sub">나</span>':"")+'</button>';});
+      byTeam[team].forEach(function(u){const self=currentUser&&u.id===currentUser.id;const sel=self?viewTarget.type==="me":(viewTarget.type==="user"&&viewTarget.id===u.id);const dn=dispName(u);h+='<button class="sortopt vp-mem'+(sel?" sel":"")+'" data-vt="user" data-uid="'+esc(u.id)+'" data-name="'+esc(dn)+'">'+esc(dn)+(self?' <span class="vp-sub">나</span>':"")+'</button>';});
     });
     $("viewPopList").innerHTML=h;
     const rb=$("viewReset");if(rb)rb.style.display=viewTarget.type==="me"?"none":"flex";
@@ -958,7 +960,7 @@ function runApp(signal, created) {
   function delLeave(id){leaves=leaves.filter(l=>l.id!==id);saveLeaves();render();renderLeave();toast("연차를 취소했어요");}
   function initLeaveTab(){lvRange={start:null,end:null};lvType="full";lvHourVal=2;document.querySelectorAll("#lvHourSel button").forEach(x=>x.classList.toggle("on",x.dataset.hh==="2"));paintLvRange();renderLeave();}
   // ===== 마이페이지(계정·연차) =====
-  function paintMyAccount(){const h=$("mpUserHead");if(h&&currentUser)h.innerHTML='<div class="mp-uname">'+esc(currentUser.name)+'</div><div class="mp-umeta">'+esc(currentUser.team)+' · '+esc(currentUser.email||"")+'</div>';["mpCurPw","mpNewPw","mpNewPw2"].forEach(id=>{const el=$(id);if(el)el.value="";});const m=$("mpPwMsg");if(m){m.textContent="";m.className="mp-msg";}}
+  function paintMyAccount(){const h=$("mpUserHead");if(h&&currentUser)h.innerHTML='<div class="mp-uname">'+esc(dispName(currentUser))+'</div><div class="mp-umeta">'+esc(currentUser.team)+' · '+esc(currentUser.email||"")+'</div>';["mpCurPw","mpNewPw","mpNewPw2"].forEach(id=>{const el=$(id);if(el)el.value="";});const m=$("mpPwMsg");if(m){m.textContent="";m.className="mp-msg";}}
   function mpSelect(tab){document.querySelectorAll("#mpTabs .mp-tab").forEach(b=>b.classList.toggle("on",b.dataset.mt===tab));document.querySelectorAll("#myPageModal .mp-panel").forEach(p=>{p.style.display=p.dataset.mp===tab?"":"none";});if(tab==="leave")initLeaveTab();else paintMyAccount();}
   function openMyPage(tab){mpSelect(tab||"account");$("myPageModal").classList.add("open");}
   function closeMyPage(){$("myPageModal").classList.remove("open");}
@@ -976,6 +978,7 @@ function runApp(signal, created) {
 
   /* 릴리즈 내역 */
   const CHANGELOG=[
+    {v:"1.1.13",items:["회원가입에서 성·이름을 따로 입력(전체 이름은 DB에 보관)","화면에는 이름만 표시(담당자 배지·로그인 칩·팀원 목록)","로그인 칩에 사람 아이콘 추가 + 우측 버튼들과 동일한 흰색·높이로 통일"]},
     {v:"1.1.12",items:["제목 입력칸에 브라우저 저장 이메일이 자동완성되던 문제 수정"]},
     {v:"1.1.11",items:["마이페이지 신설(로그인 정보 클릭) — 좌측 탭으로 계정·연차 관리","계정 탭에서 비밀번호 변경과 로그아웃","연차 관리를 마이페이지로 이동(헤더 연차·로그아웃 버튼 제거)","상단 우측은 로그인정보·알림·다크모드·휴지통만 유지","정렬에서 '우선순위순' 제거(우선순위 보기와 중복)"]},
     {v:"1.1.10",items:["헤더·컨트롤 바를 화면 전체 폭으로(풋터처럼) + 컨트롤 하단 전체 구분선","우선순위 보기·완료 보기 토글의 테두리 제거","담당자 배지: 내 업무는 파란색(내 이름)·타인은 회색으로 구분"]},

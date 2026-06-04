@@ -10,7 +10,11 @@ export async function POST(req) {
     const b = await req.json();
     const email = String(b?.email || "").trim().toLowerCase();
     const password = String(b?.password || "");
-    const name = String(b?.name || "").trim();
+    const lastName = String(b?.lastName || "").trim();
+    const firstName = String(b?.firstName || "").trim();
+    // 성+이름 분리 입력(구버전 단일 name 호환). 표시는 이름(firstName)만 사용.
+    const name = (lastName + firstName) || String(b?.name || "").trim();
+    const fname = firstName || name;
     const team = String(b?.team || "").trim();
     if (!email || !password || !name || !team) return NextResponse.json({ error: "모든 항목을 입력하세요" }, { status: 400 });
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return NextResponse.json({ error: "이메일 형식이 올바르지 않아요" }, { status: 400 });
@@ -23,10 +27,10 @@ export async function POST(req) {
 
     const id = uid();
     const hash = await hashPw(password);
-    await pool.query("INSERT INTO users (id, email, pw_hash, name, team, created) VALUES (?,?,?,?,?,?)",
-      [id, email, hash, name, team, Date.now()]);
+    await pool.query("INSERT INTO users (id, email, pw_hash, name, first_name, team, created) VALUES (?,?,?,?,?,?,?)",
+      [id, email, hash, name, fname, team, Date.now()]);
 
-    const user = { id, email, name, team };
+    const user = { id, email, name, firstName: fname, team };
     const res = NextResponse.json({ ok: true, user });
     res.cookies.set(AUTH_COOKIE, makeToken(user), cookieOpts());
     return res;

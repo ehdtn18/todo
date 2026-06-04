@@ -40,10 +40,10 @@ const DESIGN = [
 ];
 
 const DUMMIES = [
-  { email: "dajeong@careid.center", name: "다정", team: "기획팀", defs: PLANNING },
-  { email: "sumin@careid.center", name: "수민", team: "기획팀", defs: PLANNING },
-  { email: "jaehyuk@careid.center", name: "재혁", team: "개발팀", defs: DEV },
-  { email: "yunji@careid.center", name: "윤지", team: "디자인팀", defs: DESIGN },
+  { email: "dajeong@careid.center", name: "이다정", first: "다정", team: "기획팀", defs: PLANNING },
+  { email: "sumin@careid.center", name: "안수민", first: "수민", team: "기획팀", defs: PLANNING },
+  { email: "jaehyuk@careid.center", name: "최재혁", first: "재혁", team: "개발팀", defs: DEV },
+  { email: "yunji@careid.center", name: "남윤지", first: "윤지", team: "디자인팀", defs: DESIGN },
 ];
 
 const pad = (n) => String(n).padStart(2, "0");
@@ -66,8 +66,8 @@ async function upsertUser(pool, u) {
   if (ex.length) return ex[0].id;
   const id = uid();
   const hash = await hashPw(DUMMY_PW);
-  await pool.query("INSERT INTO users (id, email, pw_hash, name, team, created) VALUES (?,?,?,?,?,?)",
-    [id, u.email, hash, u.name, u.team, Date.now()]);
+  await pool.query("INSERT INTO users (id, email, pw_hash, name, first_name, team, created) VALUES (?,?,?,?,?,?,?)",
+    [id, u.email, hash, u.name, u.first || u.name, u.team, Date.now()]);
   return id;
 }
 

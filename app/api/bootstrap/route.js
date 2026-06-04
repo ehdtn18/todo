@@ -13,12 +13,12 @@ export async function GET(req) {
     await ensureSchema();
     const pool = getPool();
     const [me, tasks, trash, leaves, settingsRows, users] = await Promise.all([
-      pool.query("SELECT id, email, name, team FROM users WHERE id=?", [a.uid]),
+      pool.query("SELECT id, email, name, first_name, team FROM users WHERE id=?", [a.uid]),
       pool.query("SELECT * FROM tasks WHERE owner=? ORDER BY sort_order ASC, created ASC", [a.uid]),
       pool.query("SELECT * FROM trash WHERE owner=? ORDER BY deleted_at DESC, sort_order ASC", [a.uid]),
       pool.query("SELECT * FROM leaves WHERE owner=? ORDER BY ldate ASC", [a.uid]),
       pool.query("SELECT data FROM settings WHERE owner=?", [a.uid]),
-      pool.query("SELECT id, name, team, email FROM users ORDER BY team ASC, name ASC"),
+      pool.query("SELECT id, name, first_name, team, email FROM users ORDER BY team ASC, name ASC"),
     ]);
     const meRow = me[0][0];
     if (!meRow) return NextResponse.json({ user: null });
@@ -27,12 +27,12 @@ export async function GET(req) {
       try { settings = typeof settingsRows[0][0].data === "string" ? JSON.parse(settingsRows[0][0].data) : settingsRows[0][0].data; } catch { settings = {}; }
     }
     return NextResponse.json({
-      user: { id: meRow.id, email: meRow.email, name: meRow.name, team: meRow.team },
+      user: { id: meRow.id, email: meRow.email, name: meRow.name, firstName: meRow.first_name || meRow.name, team: meRow.team },
       tasks: tasks[0].map(rowToTask),
       trash: trash[0].map(rowToTrash),
       leaves: leaves[0].map(rowToLeave),
       settings: settings && typeof settings === "object" ? settings : {},
-      users: users[0].map((u) => ({ id: u.id, name: u.name, team: u.team, email: u.email })),
+      users: users[0].map((u) => ({ id: u.id, name: u.name, firstName: u.first_name || u.name, team: u.team, email: u.email })),
     });
   } catch (e) {
     console.error("GET /api/bootstrap failed:", e);

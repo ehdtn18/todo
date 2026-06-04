@@ -10,8 +10,8 @@ export async function GET(req) {
     const a = getAuth(req);
     if (!a) return NextResponse.json({ error: "로그인이 필요해요" }, { status: 401 });
     await ensureSchema();
-    const [rows] = await getPool().query("SELECT id, name, team, email FROM users ORDER BY team ASC, name ASC");
-    return NextResponse.json(rows.map((u) => ({ id: u.id, name: u.name, team: u.team, email: u.email })));
+    const [rows] = await getPool().query("SELECT id, name, first_name, team, email FROM users ORDER BY team ASC, name ASC");
+    return NextResponse.json(rows.map((u) => ({ id: u.id, name: u.name, firstName: u.first_name || u.name, team: u.team, email: u.email })));
   } catch (e) {
     console.error("GET /api/users failed:", e);
     return NextResponse.json({ error: "DB 조회 실패: " + e.message }, { status: 500 });

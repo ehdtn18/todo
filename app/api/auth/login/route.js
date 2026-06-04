@@ -18,7 +18,7 @@ export async function POST(req) {
     const ok = await verifyPw(password, u.pw_hash);
     if (!ok) return NextResponse.json({ error: "이메일 또는 비밀번호가 올바르지 않아요" }, { status: 401 });
 
-    const user = { id: u.id, email: u.email, name: u.name, team: u.team };
+    const user = { id: u.id, email: u.email, name: u.name, firstName: u.first_name || u.name, team: u.team };
     const res = NextResponse.json({ ok: true, user });
     res.cookies.set(AUTH_COOKIE, makeToken(user), cookieOpts());
     return res;
