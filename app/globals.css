@@ -9,7 +9,7 @@
   --sans:"Pretendard","Pretendard Variable",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
 }
 *{box-sizing:border-box;margin:0;padding:0}
-html{height:100%}
+html{height:100%;scrollbar-gutter:stable}
 html,body{background:var(--bg)}
 body{min-height:100%}
 body{font-family:var(--sans);color:var(--ink);-webkit-font-smoothing:antialiased;line-height:1.55;padding:24px 18px 70px}
@@ -385,8 +385,10 @@ footer{position:fixed;left:0;right:0;bottom:0;z-index:30;background:var(--bg);bo
 .cclear{color:var(--soft)} .cclear:hover{color:var(--ink2);background:var(--line2)}
 .cdone{color:#fff;background:var(--accent);font-weight:600} .cdone:hover{background:var(--accent-press)}
 
-.overlay{position:fixed;inset:0;background:rgba(25,31,40,.40);display:none;align-items:flex-start;justify-content:center;z-index:50;padding:30px 16px;overflow:auto}
+.overlay{position:fixed;inset:0;background:rgba(25,31,40,.40);display:none;align-items:flex-start;justify-content:center;z-index:50;padding:30px 16px;overflow:auto;overscroll-behavior:contain}
 .overlay.open{display:flex;animation:fadeIn .18s ease}
+/* 모달 열리면 배경 페이지 스크롤 잠금 */
+html:has(.overlay.open){overflow:hidden}
 .sheet{position:relative;background:var(--paper);border-radius:18px;width:100%;max-width:540px;padding:22px;box-shadow:0 24px 64px rgba(0,0,0,.22);animation:sheetIn .24s var(--ease)}
 .mh{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
 .mh h3{font-size:17px;font-weight:700;color:var(--ink)}
