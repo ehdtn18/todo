@@ -58,6 +58,7 @@ const SHELL_HTML = `
       <button data-v="dash">대시보드</button>
     </div>
     <button class="viewas" id="viewAsBtn" title="보기 대상 (팀/팀원)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg><span id="viewAsLabel">내 할일</span><svg class="va-caret" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg></button>
+    <button class="viewclear" id="viewClearBtn" title="내 할일로 돌아가기" style="display:none"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 010 10h-1"/></svg>내 할일로</button>
     <span class="spacer"></span>
     <div class="seg icon-seg" id="listLayoutSeg" style="display:none">
       <button class="on" data-ll="rows" title="리스트형"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
@@ -92,7 +93,6 @@ const SHELL_HTML = `
     </div>
   </div>
 
-  <div class="ro-banner" id="roBanner" style="display:none"></div>
   <div id="view"></div>
 
   <footer>
@@ -350,12 +350,14 @@ function runApp(signal, created) {
 
   // ===== 보기 대상(팀/팀원) 필터 — 보기 전용 =====
   function viewLabel(){if(viewTarget.type==="user")return viewTarget.name;if(viewTarget.type==="team")return viewTarget.team;return "내 할일";}
-  function updateViewAs(){$("viewAsLabel").textContent=viewLabel();$("viewAsBtn").classList.toggle("active",viewTarget.type!=="me");}
+  function updateViewAs(){
+    const me=viewTarget.type==="me";
+    $("viewAsLabel").textContent=me?"내 할일":viewLabel()+" (보기전용)";
+    $("viewAsBtn").classList.toggle("active",!me);
+    const clr=$("viewClearBtn");if(clr)clr.style.display=me?"none":"inline-flex";
+  }
   function applyReadOnly(){
     const comp=document.querySelector(".composer");if(comp)comp.style.display=readOnly?"none":"";
-    const b=$("roBanner");
-    if(readOnly){b.style.display="flex";b.innerHTML='<span class="ro-txt">'+esc(viewLabel())+(viewTarget.type==="team"?" 전체":"")+' 할일 · 보기 전용</span><button class="ro-clear" id="roClear">내 할일로</button>';const rc=$("roClear");if(rc)rc.onclick=function(){selectView({type:"me"});};}
-    else{b.style.display="none";}
   }
   async function loadTasksFor(target){
     let url="/api/tasks";
@@ -377,14 +379,15 @@ function runApp(signal, created) {
     const byTeam={};allUsers.forEach(function(u){(byTeam[u.team]=byTeam[u.team]||[]).push(u);});
     Object.keys(byTeam).forEach(function(team){
       h+='<button class="sortopt vp-teamhd'+(viewTarget.type==="team"&&viewTarget.team===team?" sel":"")+'" data-vt="team" data-team="'+esc(team)+'">'+esc(team)+' <span class="vp-sub">'+byTeam[team].length+'명 · 전체</span></button>';
-      byTeam[team].forEach(function(u){if(currentUser&&u.id===currentUser.id)return;h+='<button class="sortopt vp-mem'+(viewTarget.type==="user"&&viewTarget.id===u.id?" sel":"")+'" data-vt="user" data-uid="'+esc(u.id)+'" data-name="'+esc(u.name)+'">'+esc(u.name)+'</button>';});
+      byTeam[team].forEach(function(u){const self=currentUser&&u.id===currentUser.id;const sel=self?viewTarget.type==="me":(viewTarget.type==="user"&&viewTarget.id===u.id);h+='<button class="sortopt vp-mem'+(sel?" sel":"")+'" data-vt="user" data-uid="'+esc(u.id)+'" data-name="'+esc(u.name)+'">'+esc(u.name)+(self?' <span class="vp-sub">나</span>':"")+'</button>';});
     });
     $("viewPopList").innerHTML=h;
   }
   function openViewPop(){renderViewPop();$("viewPop").classList.add("open");positionViewPop();}
   function closeViewPop(){$("viewPop").classList.remove("open");}
   $("viewAsBtn").onclick=function(e){e.stopPropagation();if(viewPopOpen())closeViewPop();else openViewPop();};
-  $("viewPopList").addEventListener("click",function(e){const b=e.target.closest("[data-vt]");if(!b)return;const t=b.dataset.vt;if(t==="me")selectView({type:"me"});else if(t==="team")selectView({type:"team",team:b.dataset.team});else if(t==="user")selectView({type:"user",id:b.dataset.uid,name:b.dataset.name});});
+  $("viewPopList").addEventListener("click",function(e){const b=e.target.closest("[data-vt]");if(!b)return;const t=b.dataset.vt;if(t==="me")selectView({type:"me"});else if(t==="team")selectView({type:"team",team:b.dataset.team});else if(t==="user"){if(currentUser&&b.dataset.uid===currentUser.id)selectView({type:"me"});else selectView({type:"user",id:b.dataset.uid,name:b.dataset.name});}});
+  $("viewClearBtn").onclick=function(){selectView({type:"me"});};
   document.addEventListener("mousedown",function(e){if(viewPopOpen()&&!$("viewPop").contains(e.target)&&!$("viewAsBtn").contains(e.target))closeViewPop();},{signal});
   window.addEventListener("resize",function(){if(viewPopOpen())positionViewPop();},{signal});
 
@@ -940,6 +943,7 @@ function runApp(signal, created) {
 
   /* 릴리즈 내역 */
   const CHANGELOG=[
+    {v:"1.1.8",items:["보기 전용 배너 제거 — 타팀/팀원을 보면 필터 버튼에 '기획팀 (보기전용)'처럼 표시","필터 옆 '내 할일로' 버튼으로 한 번에 내 할일 복귀","팀원 목록에 본인도 표시(자기 팀에서 본인 보임)","리스트 우선순위 보기: 그룹별 좌측 색 막대로 구분을 더 명확하게"]},
     {v:"1.1.7",items:["로그인/회원가입 도입 — 유저별로 할 일·휴지통·연차·설정 분리(팀: 기획·경영지원·개발·디자인·MD)","팀/팀원 '보기' 필터 — 내 할일 기본, 팀 전체나 특정 팀원 할일을 보기 전용으로 조회","초기 로딩 속도 개선: bootstrap 단일 요청·병렬 쿼리 + 함수 리전 서울(icn1)로 지연 최소화"]},
     {v:"1.1.6",items:["모달이 열리면 배경 페이지 스크롤 잠금(스크롤바 흔들림 방지 포함)"]},
     {v:"1.1.5",items:["n차 컨펌: 날짜가 자동 포맷(26.06.05(금))된 뒤에는 오른쪽에 메모 등 자유 입력 허용","작성 폼 강조: 카드 뒤 부드러운 파스텔 글로우 + 떠오르는 그림자(팝아웃)","생성/수정 애니메이션 끝의 반짝이는 링 제거"]},
@@ -1208,7 +1212,7 @@ function runApp(signal, created) {
     if(priGroup){
       const groups=[{k:"high",l:"높음"},{k:"mid",l:"중간"},{k:"low",l:"낮음"}];
       let html="";
-      groups.forEach(function(g){const items=arr.filter(t=>t.pri===g.k);if(!items.length)return;html+='<div class="prigroup"><div class="prigroup-hd"><span class="pri">'+priIcon(g.k)+priTxt[g.k]+'</span><span class="prigroup-n">'+items.length+'</span></div>'+ul(items)+'</div>';});
+      groups.forEach(function(g){const items=arr.filter(t=>t.pri===g.k);if(!items.length)return;html+='<div class="prigroup" data-pri="'+g.k+'"><div class="prigroup-hd"><span class="pri">'+priIcon(g.k)+priTxt[g.k]+'</span><span class="prigroup-n">'+items.length+'개</span></div>'+ul(items)+'</div>';});
       $("view").innerHTML=html;return;
     }
     $("view").innerHTML=ul(arr);
