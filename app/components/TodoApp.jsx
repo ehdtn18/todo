@@ -14,12 +14,10 @@ const SHELL_HTML = `
       <div class="date" id="today"></div>
     </div>
     <div class="head-actions">
-      <span class="userchip" id="userChip" title="현재 로그인"></span>
-      <button class="hbtn" id="leaveBtn" title="연차 관리" aria-label="연차"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M12 21V11"/><path d="M5 11a7 7 0 0114 0z"/></svg></button>
+      <button class="userchip" id="userChip" title="마이페이지" aria-label="마이페이지"></button>
       <button class="hbtn" id="bellBtn" title="알림" aria-label="알림"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></svg><span class="tbadge" id="bellCount" style="display:none">0</span></button>
       <button class="hbtn" id="themeBtn" title="다크/라이트 모드" aria-label="테마 전환"></button>
       <button class="hbtn" id="trashBtn" title="휴지통" aria-label="휴지통"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg><span class="tbadge" id="trashCount" style="display:none">0</span></button>
-      <button class="hbtn" id="logoutBtn" title="로그아웃" aria-label="로그아웃"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg></button>
     </div>
     </div>
   </header>
@@ -198,30 +196,49 @@ const SHELL_HTML = `
   </div>
 </div>
 
-<div class="overlay" id="leaveModal">
-  <div class="sheet lvsheet">
-    <div class="mh"><h3>연차 관리</h3><button class="mx" title="닫기" id="lvClose">×</button></div>
-    <div class="lv-summary" id="lvSummary"></div>
-    <div class="flabel">연차 추가</div>
-    <div class="rangefield lv-rf" id="lvRangeField">
-      <span class="dl"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>사용 날짜 (주말·공휴일 제외)</span>
-      <span class="rv empty" id="lvRangeText">날짜 선택</span>
+<div class="overlay" id="myPageModal">
+  <div class="sheet mpsheet">
+    <div class="mh"><h3>마이페이지</h3><button class="mx" title="닫기" id="mpClose">×</button></div>
+    <div class="mp-wrap">
+      <div class="mp-tabs" id="mpTabs">
+        <button class="mp-tab on" data-mt="account"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 016-6h4a6 6 0 016 6v1"/></svg>계정</button>
+        <button class="mp-tab" data-mt="leave"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M12 21V11"/><path d="M5 11a7 7 0 0114 0z"/></svg>연차</button>
+      </div>
+      <div class="mp-body">
+        <div class="mp-panel" data-mp="account">
+          <div class="mp-userhead" id="mpUserHead"></div>
+          <div class="flabel">비밀번호 변경</div>
+          <input type="password" id="mpCurPw" class="auth-in mp-in" placeholder="현재 비밀번호" autocomplete="current-password">
+          <input type="password" id="mpNewPw" class="auth-in mp-in" placeholder="새 비밀번호 (6자 이상)" autocomplete="new-password">
+          <input type="password" id="mpNewPw2" class="auth-in mp-in" placeholder="새 비밀번호 확인" autocomplete="new-password">
+          <div class="mp-msg" id="mpPwMsg"></div>
+          <button class="btn-primary mp-pwbtn" id="mpPwBtn">비밀번호 변경</button>
+          <div class="mp-logoutrow"><button class="mp-logout" id="mpLogout"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>로그아웃</button></div>
+        </div>
+        <div class="mp-panel" data-mp="leave" style="display:none">
+          <div class="lv-summary" id="lvSummary"></div>
+          <div class="flabel">연차 추가</div>
+          <div class="rangefield lv-rf" id="lvRangeField">
+            <span class="dl"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>사용 날짜 (주말·공휴일 제외)</span>
+            <span class="rv empty" id="lvRangeText">날짜 선택</span>
+          </div>
+          <div class="seg lv-typeseg" id="lvType">
+            <button class="on" data-t="full">하루 종일</button>
+            <button data-t="am">오전 반차</button>
+            <button data-t="pm">오후 반차</button>
+            <button data-t="hour">시간차</button>
+          </div>
+          <div class="lv-hoursel" id="lvHourSel" style="display:none">
+            <button class="on" data-hh="2">2시간</button>
+            <button data-hh="6">6시간</button>
+          </div>
+          <div class="lv-info" id="lvInfo">날짜를 선택하세요</div>
+          <button class="btn-primary lv-add" id="lvAddBtn">연차 추가</button>
+          <div class="flabel">사용 내역 <span id="lvYear" class="lv-yr"></span></div>
+          <div id="lvList" class="trashlist"></div>
+        </div>
+      </div>
     </div>
-    <div class="seg lv-typeseg" id="lvType">
-      <button class="on" data-t="full">하루 종일</button>
-      <button data-t="am">오전 반차</button>
-      <button data-t="pm">오후 반차</button>
-      <button data-t="hour">시간차</button>
-    </div>
-    <div class="lv-hoursel" id="lvHourSel" style="display:none">
-      <button class="on" data-hh="2">2시간</button>
-      <button data-hh="6">6시간</button>
-    </div>
-    <div class="lv-info" id="lvInfo">날짜를 선택하세요</div>
-    <button class="btn-primary lv-add" id="lvAddBtn">연차 추가</button>
-    <div class="flabel">사용 내역 <span id="lvYear" class="lv-yr"></span></div>
-    <div id="lvList" class="trashlist"></div>
-    <div class="m-actions"><button class="btn-primary" id="lvDone">닫기</button></div>
   </div>
 </div>
 
@@ -350,7 +367,6 @@ function runApp(signal, created) {
   document.querySelectorAll("#authTabs button").forEach(function(b){b.onclick=function(){document.querySelectorAll("#authTabs button").forEach(x=>x.classList.toggle("on",x===b));const reg=b.dataset.at==="register";$("authLogin").style.display=reg?"none":"flex";$("authRegister").style.display=reg?"flex":"none";authErr("");};});
   $("authLogin").addEventListener("submit",async function(e){e.preventDefault();authErr("");const email=$("liEmail").value.trim(),password=$("liPw").value;if(!email||!password){authErr("이메일과 비밀번호를 입력하세요");return;}$("liBtn").disabled=true;try{const r=await fetch("/api/auth/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email:email,password:password})});const j=await r.json();if(!r.ok){authErr(j.error||"로그인 실패");return;}await boot();}catch(err){authErr("네트워크 오류");}finally{$("liBtn").disabled=false;}});
   $("authRegister").addEventListener("submit",async function(e){e.preventDefault();authErr("");const email=$("rgEmail").value.trim(),password=$("rgPw").value,pw2=$("rgPw2").value,name=$("rgName").value.trim(),team=$("rgTeam").value;if(!email||!password||!name||!team){authErr("모든 항목을 입력하세요");return;}if(password!==pw2){authErr("비밀번호가 일치하지 않아요");return;}if(password.length<6){authErr("비밀번호는 6자 이상이어야 해요");return;}$("rgBtn").disabled=true;try{const r=await fetch("/api/auth/register",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email:email,password:password,name:name,team:team})});const j=await r.json();if(!r.ok){authErr(j.error||"회원가입 실패");return;}await boot();}catch(err){authErr("네트워크 오류");}finally{$("rgBtn").disabled=false;}});
-  $("logoutBtn").onclick=async function(){try{await fetch("/api/auth/logout",{method:"POST"});}catch(e){}currentUser=null;tasks=[];mineTasks=[];trash=[];leaves=[];allUsers=[];viewTarget={type:"me"};readOnly=false;paintUser();render();showAuth();$("liEmail").value="";$("liPw").value="";};
 
   // ===== 보기 대상(팀/팀원) 필터 — 보기 전용 =====
   function viewLabel(){if(viewTarget.type==="user")return viewTarget.name;if(viewTarget.type==="team")return viewTarget.team;return "내 할일";}
@@ -440,7 +456,7 @@ function runApp(signal, created) {
     return "todo";
   }
   // 완료 토글 시 순서가 바뀌지 않도록 done 우선 정렬 제거 (#17)
-  const SORT_OPTS=[{k:"created",label:"등록순"},{k:"due",label:"마감 임박순"},{k:"title",label:"이름순"},{k:"pri",label:"우선순위순"},{k:"start",label:"시작일순"}];
+  const SORT_OPTS=[{k:"created",label:"등록순"},{k:"due",label:"마감 임박순"},{k:"title",label:"이름순"},{k:"start",label:"시작일순"}];
   function sortLabel(k){const o=SORT_OPTS.find(x=>x.k===k);return o?o.label:"등록순";}
   function sortT(arr){const prr={high:0,mid:1,low:2};return arr.slice().sort(function(a,b){
     if(sortBy==="due"){const ra=refDate(a),rb=refDate(b);if(ra&&rb){const dd=diffDays(todayISO(),ra)-diffDays(todayISO(),rb);if(dd)return dd;}else if(ra)return -1;else if(rb)return 1;const p=prr[a.pri]-prr[b.pri];if(p)return p;return a.created-b.created;}
@@ -938,11 +954,18 @@ function runApp(signal, created) {
     saveLeaves();lvRange={start:null,end:null};paintLvRange();render();renderLeave();toast(dates.length+"일 연차를 추가했어요");
   }
   function delLeave(id){leaves=leaves.filter(l=>l.id!==id);saveLeaves();render();renderLeave();toast("연차를 취소했어요");}
-  function openLeave(){lvRange={start:null,end:null};lvType="full";lvHourVal=2;document.querySelectorAll("#lvHourSel button").forEach(x=>x.classList.toggle("on",x.dataset.hh==="2"));paintLvRange();renderLeave();$("leaveModal").classList.add("open");}
-  function closeLeave(){$("leaveModal").classList.remove("open");}
-  $("leaveBtn").onclick=openLeave;
-  $("lvClose").onclick=closeLeave;$("lvDone").onclick=closeLeave;
-  $("leaveModal").addEventListener("mousedown",function(e){if(e.target===$("leaveModal"))closeLeave();});
+  function initLeaveTab(){lvRange={start:null,end:null};lvType="full";lvHourVal=2;document.querySelectorAll("#lvHourSel button").forEach(x=>x.classList.toggle("on",x.dataset.hh==="2"));paintLvRange();renderLeave();}
+  // ===== 마이페이지(계정·연차) =====
+  function paintMyAccount(){const h=$("mpUserHead");if(h&&currentUser)h.innerHTML='<div class="mp-uname">'+esc(currentUser.name)+'</div><div class="mp-umeta">'+esc(currentUser.team)+' · '+esc(currentUser.email||"")+'</div>';["mpCurPw","mpNewPw","mpNewPw2"].forEach(id=>{const el=$(id);if(el)el.value="";});const m=$("mpPwMsg");if(m){m.textContent="";m.className="mp-msg";}}
+  function mpSelect(tab){document.querySelectorAll("#mpTabs .mp-tab").forEach(b=>b.classList.toggle("on",b.dataset.mt===tab));document.querySelectorAll("#myPageModal .mp-panel").forEach(p=>{p.style.display=p.dataset.mp===tab?"":"none";});if(tab==="leave")initLeaveTab();else paintMyAccount();}
+  function openMyPage(tab){mpSelect(tab||"account");$("myPageModal").classList.add("open");}
+  function closeMyPage(){$("myPageModal").classList.remove("open");}
+  $("userChip").onclick=function(){if(!currentUser)return;openMyPage("account");};
+  $("mpClose").onclick=closeMyPage;
+  $("myPageModal").addEventListener("mousedown",function(e){if(e.target===$("myPageModal"))closeMyPage();});
+  document.querySelectorAll("#mpTabs .mp-tab").forEach(function(b){b.onclick=function(){mpSelect(b.dataset.mt);};});
+  $("mpLogout").onclick=async function(){try{await fetch("/api/auth/logout",{method:"POST"});}catch(e){}currentUser=null;tasks=[];mineTasks=[];trash=[];leaves=[];allUsers=[];viewTarget={type:"me"};readOnly=false;paintUser();render();closeMyPage();showAuth();$("liEmail").value="";$("liPw").value="";};
+  $("mpPwBtn").onclick=async function(){const cur=$("mpCurPw").value,np=$("mpNewPw").value,np2=$("mpNewPw2").value;const msg=$("mpPwMsg");function err(m){msg.textContent=m;msg.className="mp-msg err";}if(!cur||!np){err("현재·새 비밀번호를 입력하세요");return;}if(np.length<6){err("새 비밀번호는 6자 이상이어야 해요");return;}if(np!==np2){err("새 비밀번호가 일치하지 않아요");return;}$("mpPwBtn").disabled=true;try{const r=await fetch("/api/auth/password",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({currentPassword:cur,newPassword:np})});const j=await r.json();if(!r.ok){err(j.error||"변경 실패");return;}msg.textContent="비밀번호를 변경했어요";msg.className="mp-msg ok";["mpCurPw","mpNewPw","mpNewPw2"].forEach(id=>$(id).value="");}catch(e){err("네트워크 오류");}finally{$("mpPwBtn").disabled=false;}};
   document.querySelectorAll("#lvType button").forEach(function(b){b.onclick=function(){if(b.classList.contains("dim"))return;lvType=b.dataset.t;paintLvControls();};});
   document.querySelectorAll("#lvHourSel button").forEach(function(b){b.onclick=function(){lvHourVal=Number(b.dataset.hh);document.querySelectorAll("#lvHourSel button").forEach(x=>x.classList.toggle("on",x===b));paintLvControls();};});
   $("lvRangeField").addEventListener("click",function(){$("lvRangeField").classList.remove("err");openCal($("lvRangeField"),lvRange,function(s,e){lvRange.start=s;lvRange.end=e;paintLvRange();},true);});
@@ -951,6 +974,7 @@ function runApp(signal, created) {
 
   /* 릴리즈 내역 */
   const CHANGELOG=[
+    {v:"1.1.11",items:["마이페이지 신설(로그인 정보 클릭) — 좌측 탭으로 계정·연차 관리","계정 탭에서 비밀번호 변경과 로그아웃","연차 관리를 마이페이지로 이동(헤더 연차·로그아웃 버튼 제거)","상단 우측은 로그인정보·알림·다크모드·휴지통만 유지","정렬에서 '우선순위순' 제거(우선순위 보기와 중복)"]},
     {v:"1.1.10",items:["헤더·컨트롤 바를 화면 전체 폭으로(풋터처럼) + 컨트롤 하단 전체 구분선","우선순위 보기·완료 보기 토글의 테두리 제거","담당자 배지: 내 업무는 파란색(내 이름)·타인은 회색으로 구분"]},
     {v:"1.1.9",items:["팀 보기에서 각 할 일에 담당자 배지 표시(리스트·칸반·달력)","우선순위 보기 그룹을 연한 배경 카드+간격으로 구분 강화(헤더 크게·검정)"]},
     {v:"1.1.8",items:["보기 전용 배너 제거 — 타팀/팀원을 보면 필터 버튼에 '기획팀 (보기전용)'처럼 표시","필터 옆 '내 할일로' 버튼으로 한 번에 내 할일 복귀","팀원 목록에 본인도 표시(자기 팀에서 본인 보임)","리스트 우선순위 보기: 그룹별 좌측 색 막대로 구분을 더 명확하게"]},
@@ -1118,7 +1142,7 @@ function runApp(signal, created) {
   $("logModal").addEventListener("click",function(e){const item=e.target.closest(".logitem");if(item){logSel=+item.dataset.i;renderLog();return;}if(e.target.closest("#logRollback")){doRollback();return;}});
   $("lmClose").onclick=closeLog;$("logModal").addEventListener("mousedown",function(e){if(e.target===$("logModal"))closeLog();});
 
-  document.addEventListener("keydown",function(e){if(e.key==="Escape"){if($("helpModal").classList.contains("open"))$("helpModal").classList.remove("open");else if($("resetModal").classList.contains("open"))$("resetModal").classList.remove("open");else if($("relModal").classList.contains("open"))closeRel();else if($("leaveModal").classList.contains("open"))closeLeave();else if($("notiModal").classList.contains("open"))closeNoti();else if($("trashModal").classList.contains("open"))closeTrash();else if($("confirmModal").classList.contains("open"))closeConfirm();else if($("logModal").classList.contains("open"))closeLog();else if($("editModal").classList.contains("open"))closeEdit();}},{signal});
+  document.addEventListener("keydown",function(e){if(e.key==="Escape"){if($("helpModal").classList.contains("open"))$("helpModal").classList.remove("open");else if($("resetModal").classList.contains("open"))$("resetModal").classList.remove("open");else if($("relModal").classList.contains("open"))closeRel();else if($("myPageModal").classList.contains("open"))closeMyPage();else if($("notiModal").classList.contains("open"))closeNoti();else if($("trashModal").classList.contains("open"))closeTrash();else if($("confirmModal").classList.contains("open"))closeConfirm();else if($("logModal").classList.contains("open"))closeLog();else if($("editModal").classList.contains("open"))closeEdit();}},{signal});
 
   /* controls */
   function syncViewSeg(){document.querySelectorAll("#viewSeg button").forEach(function(b){b.classList.toggle("on",b.dataset.v===viewMode);});}
