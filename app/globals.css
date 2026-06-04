@@ -117,8 +117,12 @@ h1{font-size:24px;font-weight:700;letter-spacing:-.02em;color:var(--ink)}
 .searchwrap.open{width:218px;max-width:calc(100vw - 32px);border-color:var(--accent)}
 .searchbtn{width:32px;height:32px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border:none;background:transparent;color:var(--ink2);cursor:pointer}
 .searchwrap.open .searchbtn{color:var(--accent)}
-.searchin{flex:1;min-width:0;border:none;background:transparent;outline:none;font-family:var(--sans);font-size:13.5px;color:var(--ink);padding:0 10px 0 0}
+.searchin{flex:1;min-width:0;border:none;background:transparent;outline:none;font-family:var(--sans);font-size:13.5px;color:var(--ink);padding:0 6px 0 0}
 .searchin::placeholder{color:var(--faint)}
+.searchclear{align-items:center;justify-content:center;width:20px;height:20px;flex-shrink:0;margin-right:7px;border:none;background:var(--chip);color:var(--soft);border-radius:50%;cursor:pointer;padding:0;transition:background .15s,color .15s}
+.searchclear:hover{background:var(--g-weak);color:var(--ink)}
+.searchwrap:not(.open) .searchclear{display:none!important}
+mark.shl{background:var(--accent-bg);color:inherit;border-radius:3px;padding:0 1px;box-decoration-break:clone;-webkit-box-decoration-break:clone}
 /* 보기 옵션 드롭다운(우선순위·완료) */
 .disppop{width:226px}
 .disppop .disp-row{display:flex;width:100%;align-items:center;justify-content:space-between;gap:10px;padding:10px 11px;border-radius:9px;background:transparent;border:none;cursor:pointer;color:var(--ink2);font-size:14px;transition:background .12s}

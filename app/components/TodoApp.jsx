@@ -68,6 +68,7 @@ const SHELL_HTML = `
     <div class="searchwrap" id="searchWrap">
       <button class="searchbtn" id="searchBtn" title="검색" aria-label="검색"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-3.6-3.6"/></svg></button>
       <input type="text" class="searchin" id="searchInput" placeholder="제목·내용 검색" autocomplete="off">
+      <button class="searchclear" id="searchClear" title="검색어 지우기" aria-label="검색어 지우기" style="display:none"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
     </div>
     <button class="sorticon" id="dispBtn" title="보기 옵션 (우선순위·완료)" aria-label="보기 옵션"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="21" x2="14" y1="4" y2="4"/><line x1="10" x2="3" y1="4" y2="4"/><line x1="21" x2="12" y1="12" y2="12"/><line x1="8" x2="3" y1="12" y2="12"/><line x1="21" x2="16" y1="20" y2="20"/><line x1="12" x2="3" y1="20" y2="20"/><line x1="14" x2="14" y1="2" y2="6"/><line x1="8" x2="8" y1="10" y2="14"/><line x1="16" x2="16" y1="18" y2="22"/></svg><span class="sortdot" id="dispDot"></span></button>
     <div class="calnav" id="calNav" style="display:none">
@@ -987,6 +988,7 @@ function runApp(signal, created) {
 
   /* 릴리즈 내역 */
   const CHANGELOG=[
+    {v:"1.1.15",items:["검색어와 일치하는 글자에 연한 파란 하이라이트 표시","검색창에 입력이 있으면 X 버튼으로 즉시 지우기"]},
     {v:"1.1.14",items:["우선순위 보기·완료 보기를 하나의 '보기 옵션' 드롭다운으로 통합(초기화 포함)","검색 추가 — 정렬 옆 돋보기를 누르면 입력창이 펼쳐지고, 입력 즉시 제목·내용으로 실시간 검색(엔터 불필요)","리스트 컨트롤을 정렬·검색·보기옵션 3개 버튼으로 정리"]},
     {v:"1.1.13",items:["회원가입에서 성·이름을 따로 입력(전체 이름은 DB에 보관)","화면에는 이름만 표시(담당자 배지·로그인 칩·팀원 목록)","로그인 칩에 사람 아이콘 추가 + 우측 버튼들과 동일한 흰색·높이로 통일"]},
     {v:"1.1.12",items:["제목 입력칸에 브라우저 저장 이메일이 자동완성되던 문제 수정"]},
@@ -1213,9 +1215,10 @@ function runApp(signal, created) {
   /* ===== 검색 (노션식 인라인 확장 · 즉시 검색) ===== */
   function searchOpen(){return $("searchWrap").classList.contains("open");}
   function openSearch(){$("searchWrap").classList.add("open");setTimeout(function(){$("searchInput").focus();},60);}
-  function closeSearch(){$("searchWrap").classList.remove("open");$("searchInput").value="";if(searchQ){searchQ="";render();}}
+  function closeSearch(){$("searchWrap").classList.remove("open");$("searchInput").value="";$("searchClear").style.display="none";if(searchQ){searchQ="";render();}}
   $("searchBtn").onclick=function(e){e.stopPropagation();if(searchOpen())closeSearch();else openSearch();};
-  $("searchInput").addEventListener("input",function(){searchQ=this.value.trim().toLowerCase();render();});
+  $("searchInput").addEventListener("input",function(){searchQ=this.value.trim().toLowerCase();$("searchClear").style.display=this.value?"flex":"none";render();});
+  $("searchClear").onclick=function(e){e.stopPropagation();const inp=$("searchInput");inp.value="";searchQ="";this.style.display="none";inp.focus();render();};
   $("searchInput").addEventListener("keydown",function(e){if(e.key==="Escape"){closeSearch();}});
   $("searchInput").addEventListener("blur",function(){if(!this.value.trim())$("searchWrap").classList.remove("open");});
   function calShift(dir){const d=new Date((calRef||todayISO())+"T00:00:00");if(calMode==="month")d.setMonth(d.getMonth()+dir);else if(calMode==="week")d.setDate(d.getDate()+dir*7);else d.setDate(d.getDate()+dir);calRef=ymd(d);}
@@ -1241,6 +1244,8 @@ function runApp(signal, created) {
   function cfChip(t){const cfs=taskConfirms(t);if(!cfs.length)return"";const done=cfs.filter(c=>c.done).length;return '<span class="cf-chip'+(done===cfs.length?" all":"")+'">컨펌 '+done+'/'+cfs.length+'</span>';}
   function metaHtml(t,withEdited){const e=(withEdited&&t.history&&t.history.length)?'<span class="edited" data-act="log">수정됨 '+t.history.length+'회</span>':"";return '<div class="meta"><span class="pri">'+priIcon(t.pri)+priTxt[t.pri]+'</span>'+pillHtml(t)+cfChip(t)+e+'</div>';}
   function matchSearch(t){if(!searchQ)return true;return (t.title||"").toLowerCase().indexOf(searchQ)>=0||(t.body||"").toLowerCase().indexOf(searchQ)>=0;}
+  // 검색어를 텍스트 안에서 찾아 연한 파란 하이라이트로 감싼다(이스케이프 안전)
+  function hlText(text){text=text||"";if(!searchQ)return esc(text);const low=text.toLowerCase(),q=searchQ;let out="",i=0;for(;;){const idx=low.indexOf(q,i);if(idx<0){out+=esc(text.slice(i));break;}out+=esc(text.slice(i,idx))+'<mark class="shl">'+esc(text.slice(idx,idx+q.length))+'</mark>';i=idx+q.length;}return out;}
   // 칸반: 중요도 한 줄, 날짜+D-day 같은 줄
   function kanbanMeta(t){return '<div class="kmeta"><div class="kmeta-row"><span class="pri">'+priIcon(t.pri)+priTxt[t.pri]+'</span>'+cfChip(t)+'</div><div class="kmeta-row">'+pillHtml(t)+'</div></div>';}
   function emptyHtml(msg){return '<div class="empty"><svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg><p>'+msg+'</p></div>';}
@@ -1274,7 +1279,7 @@ function runApp(signal, created) {
     function taskLi(t){
       const bh=mdToHtml(t.body);const body=bh?'<div class="md'+(open?" open":"")+'">'+bh+'</div>':"";
       const more=(isCard&&bh)?'<button class="cardmore" data-act="exp">'+(cardsExpanded?"내용 닫기":"자세히 보기")+'</button>':"";
-      return '<li class="task clickable '+(t.done?"done":"")+'" data-id="'+t.id+'" data-act="e"><button class="check" data-act="t" aria-label="완료" title="완료 처리">'+CHK+'</button><div class="body"><div class="title">'+ownerBadge(t)+esc(t.title)+'</div>'+body+metaHtml(t,true)+more+'</div><div class="acts"><button class="iconbtn" data-act="d" title="삭제">'+TRASH+'</button></div></li>';
+      return '<li class="task clickable '+(t.done?"done":"")+'" data-id="'+t.id+'" data-act="e"><button class="check" data-act="t" aria-label="완료" title="완료 처리">'+CHK+'</button><div class="body"><div class="title">'+ownerBadge(t)+hlText(t.title)+'</div>'+body+metaHtml(t,true)+more+'</div><div class="acts"><button class="iconbtn" data-act="d" title="삭제">'+TRASH+'</button></div></li>';
     }
     function ul(items){return '<ul class="list'+(isCard?" cards":"")+'">'+items.map(taskLi).join("")+'</ul>';}
     let arr=tasks.filter(matchSearch);
@@ -1295,7 +1300,7 @@ function runApp(signal, created) {
   const COLS=[{k:"todo",l:"시작전"},{k:"doing",l:"진행 중"},{k:"done",l:"완료"},{k:"drop",l:"Drop"}];
   function renderKanban(){
     const g={todo:[],doing:[],done:[],drop:[]};tasks.filter(matchSearch).forEach(t=>g[classify(t)].push(t));Object.keys(g).forEach(k=>g[k]=sortT(g[k]));
-    const cols=COLS.map(function(c){const items=g[c.k];const cards=items.length?items.map(function(t){return '<div class="kcard '+(t.done?"done":"")+'" draggable="true" data-id="'+t.id+'" data-act="e"><div class="krow"><button class="check sm" data-act="t" aria-label="완료" title="완료 처리">'+CHK+'</button><div class="ktitle">'+ownerBadge(t)+esc(t.title)+'</div></div>'+kanbanMeta(t)+'</div>';}).join(""):'<div class="kempty">없음</div>';return '<div class="kcol"><div class="khd"><span>'+c.l+'</span><span class="kcount">'+items.length+'</span></div><div class="kbody" data-col="'+c.k+'">'+cards+'</div></div>';}).join("");
+    const cols=COLS.map(function(c){const items=g[c.k];const cards=items.length?items.map(function(t){return '<div class="kcard '+(t.done?"done":"")+'" draggable="true" data-id="'+t.id+'" data-act="e"><div class="krow"><button class="check sm" data-act="t" aria-label="완료" title="완료 처리">'+CHK+'</button><div class="ktitle">'+ownerBadge(t)+hlText(t.title)+'</div></div>'+kanbanMeta(t)+'</div>';}).join(""):'<div class="kempty">없음</div>';return '<div class="kcol"><div class="khd"><span>'+c.l+'</span><span class="kcount">'+items.length+'</span></div><div class="kbody" data-col="'+c.k+'">'+cards+'</div></div>';}).join("");
     $("view").innerHTML='<div class="khint">카드를 클릭하면 수정, 완료 칸으로 끌어다 놓으면 완료 처리돼요. 분류는 기간·오늘 날짜로 자동 결정됩니다.</div><div class="kanban">'+cols+'</div>';
   }
 
