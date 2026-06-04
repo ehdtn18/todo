@@ -124,12 +124,9 @@ h1{font-size:24px;font-weight:700;letter-spacing:-.02em;color:var(--ink)}
 .sortpop-reset{width:100%;margin-top:8px;border:none;border-top:1px solid var(--line2);background:transparent;color:var(--soft);font-size:13px;font-weight:600;padding:11px 0 4px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:color .15s}
 .sortpop-reset:hover{color:var(--danger)}
 /* 우선순위 그룹화 */
-.prigroup{margin:0 0 34px;padding-left:16px;border-left:3px solid var(--line);border-radius:2px}
+.prigroup{margin:0 0 18px;padding:14px 16px 16px;background:var(--soft-bg);border-radius:16px}
 .prigroup:last-child{margin-bottom:0}
-.prigroup[data-pri="high"]{border-left-color:#3E4757}
-.prigroup[data-pri="mid"]{border-left-color:#A7AEB8}
-.prigroup[data-pri="low"]{border-left-color:#D2D7DD}
-.prigroup-hd{display:flex;align-items:center;gap:9px;padding:9px 14px;margin-bottom:13px;background:var(--chip);border-radius:10px;font-size:15px;font-weight:800;color:var(--ink)}
+.prigroup-hd{display:flex;align-items:center;gap:9px;padding:0 2px;margin-bottom:12px;font-size:15px;font-weight:800;color:var(--ink)}
 .prigroup-hd .pri{font-weight:800;font-size:15px}
 .prigroup-n{margin-left:2px;font-size:12.5px;font-weight:700;color:var(--soft);background:var(--paper);border:1px solid var(--line);border-radius:99px;padding:2px 10px}
 .switch{display:inline-block;width:38px;height:22px;border-radius:99px;background:var(--g-weak);position:relative;transition:background .2s var(--ease);flex-shrink:0}
