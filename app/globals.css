@@ -810,6 +810,8 @@ select.auth-in{cursor:pointer}
 .viewas.active{border-color:var(--accent);color:var(--accent);background:var(--accent-bg)}
 .viewas .va-caret{opacity:.6}
 .viewpop .sortpop-list{max-height:720px}
+.ownerbadge{display:inline-block;font-size:11px;line-height:1.5;font-weight:700;color:var(--accent);background:var(--accent-bg);border-radius:6px;padding:1px 7px;margin-right:7px;vertical-align:middle}
+.kcard .ownerbadge{font-size:10.5px;padding:0 6px;margin-right:5px}
 #viewReset{margin-top:10px;border:none;border-radius:10px;background:var(--accent);color:#fff;font-weight:700;padding:10px 0}
 #viewReset:hover{background:var(--accent-press);color:#fff}
 .viewpop .vp-sub{font-size:11px;color:var(--faint);font-weight:500;margin-left:6px}
