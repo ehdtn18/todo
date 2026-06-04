@@ -15,6 +15,7 @@ const DUMMIES = [
   { email: "dajeong@careid.center", name: "다정", team: "기획팀", pw: DUMMY_PW },
   { email: "sumin@careid.center", name: "수민", team: "기획팀", pw: DUMMY_PW },
   { email: "jaehyuk@careid.center", name: "재혁", team: "개발팀", pw: DUMMY_PW },
+  { email: "yunji@careid.center", name: "윤지", team: "디자인팀", pw: DUMMY_PW },
 ];
 
 const pad = (n) => String(n).padStart(2, "0");
@@ -30,34 +31,44 @@ async function upsertUser(pool, u) {
   return id;
 }
 
-// 사람별 더미 task 생성기
+// 사람별 더미 task 생성기 (제목에 [기획]/[개발] 같은 접두어 쓰지 않는다)
 function planningTasks(owner) {
   const T = [
-    ["[기획] 26FW 신제품 라인업 정리", "시즌 라인업 표 정리하고 MD팀과 공유", iso(6, 2), iso(6, 4), "high", true],
-    ["[기획] 사용자 인터뷰 5명 진행", "온보딩 플로우 관련 인터뷰", iso(6, 5), iso(6, 9), "high", false],
-    ["[기획] 경쟁사 벤치마킹 리포트", "주요 3사 기능 비교 정리", iso(6, 8), iso(6, 11), "mid", false],
-    ["[기획] 신규 기능 PRD 작성", "알림 센터 개선 PRD", iso(6, 10), iso(6, 12), "high", false],
-    ["[기획] 스프린트 회고 정리", "지난 스프린트 KPT", iso(6, 3), iso(6, 3), "low", true],
-    ["[기획] 데이터 대시보드 지표 정의", "핵심 지표 7개 합의", iso(6, 12), iso(6, 16), "mid", false],
-    ["[기획] 랜딩페이지 카피 초안", "히어로/특징 섹션 문구", iso(6, 15), iso(6, 17), "mid", false],
-    ["[기획] QA 시나리오 작성", "회원가입·로그인 플로우", iso(6, 16), iso(6, 18), "high", false],
-    ["[기획] 로드맵 Q3 초안", "분기 목표/마일스톤", iso(6, 18), iso(6, 22), "mid", false],
-    ["[기획] 고객 문의 유형 분석", "최근 한 달 문의 태깅", iso(6, 6), iso(6, 7), "low", true],
+    ["26FW 신제품 라인업 정리", "시즌 라인업 표 정리하고 MD팀과 공유", iso(6, 2), iso(6, 4), "high", true],
+    ["사용자 인터뷰 5명 진행", "온보딩 플로우 관련 인터뷰", iso(6, 5), iso(6, 9), "high", false],
+    ["경쟁사 벤치마킹 리포트", "주요 3사 기능 비교 정리", iso(6, 8), iso(6, 11), "mid", false],
+    ["신규 알림 센터 PRD 작성", "알림 센터 개선 기획", iso(6, 10), iso(6, 12), "high", false],
+    ["스프린트 회고 정리", "지난 스프린트 KPT", iso(6, 3), iso(6, 3), "low", true],
+    ["데이터 대시보드 지표 정의", "핵심 지표 7개 합의", iso(6, 12), iso(6, 16), "mid", false],
+    ["랜딩페이지 카피 초안", "히어로/특징 섹션 문구", iso(6, 15), iso(6, 17), "mid", false],
+    ["회원가입 QA 시나리오 작성", "회원가입·로그인 플로우", iso(6, 16), iso(6, 18), "high", false],
+    ["Q3 로드맵 초안", "분기 목표/마일스톤", iso(6, 18), iso(6, 22), "mid", false],
+    ["고객 문의 유형 분석", "최근 한 달 문의 태깅", iso(6, 6), iso(6, 7), "low", true],
   ];
   return T;
 }
 function devTasks(owner) {
   const T = [
-    ["[개발] 로그인 API 구현", "JWT 쿠키 세션", iso(6, 2), iso(6, 5), "high", true],
-    ["[개발] 멀티테넌시 데이터 분리", "owner 컬럼 + 스코프", iso(6, 4), iso(6, 8), "high", false],
-    ["[개발] 알림 배치 잡 안정화", "중복 발송 버그", iso(6, 6), iso(6, 9), "high", false],
-    ["[개발] DB 인덱스 점검", "느린 쿼리 3개 개선", iso(6, 9), iso(6, 11), "mid", false],
-    ["[개발] CI 파이프라인 정리", "테스트 캐시 적용", iso(6, 3), iso(6, 4), "low", true],
-    ["[개발] 파일 업로드 Blob 연동", "Vercel Blob", iso(6, 10), iso(6, 12), "mid", false],
-    ["[개발] 에러 모니터링 연동", "Sentry 셋업", iso(6, 12), iso(6, 15), "mid", false],
-    ["[개발] 반응형 레이아웃 QA", "모바일 깨짐 수정", iso(6, 15), iso(6, 17), "high", false],
-    ["[개발] 캘린더 렌더 최적화", "주간 뷰 리렌더", iso(6, 17), iso(6, 20), "mid", false],
-    ["[개발] 코드 리뷰/리팩터", "공통 유틸 정리", iso(6, 7), iso(6, 8), "low", true],
+    ["로그인 API 구현", "토큰 쿠키 세션", iso(6, 2), iso(6, 5), "high", true],
+    ["멀티테넌시 데이터 분리", "owner 컬럼 + 스코프", iso(6, 4), iso(6, 8), "high", false],
+    ["알림 배치 잡 안정화", "중복 발송 버그 수정", iso(6, 6), iso(6, 9), "high", false],
+    ["DB 인덱스 점검", "느린 쿼리 3개 개선", iso(6, 9), iso(6, 11), "mid", false],
+    ["CI 파이프라인 정리", "테스트 캐시 적용", iso(6, 3), iso(6, 4), "low", true],
+    ["파일 업로드 Blob 연동", "Vercel Blob", iso(6, 10), iso(6, 12), "mid", false],
+    ["에러 모니터링 연동", "Sentry 셋업", iso(6, 12), iso(6, 15), "mid", false],
+    ["반응형 레이아웃 QA", "모바일 깨짐 수정", iso(6, 15), iso(6, 17), "high", false],
+    ["캘린더 렌더 최적화", "주간 뷰 리렌더", iso(6, 17), iso(6, 20), "mid", false],
+    ["공통 유틸 리팩터", "코드 리뷰 반영", iso(6, 7), iso(6, 8), "low", true],
+  ];
+  return T;
+}
+function designTasks(owner) {
+  const T = [
+    ["신제품 상세페이지 디자인", "DDP 상세 레이아웃", iso(6, 3), iso(6, 6), "high", false],
+    ["디자인 시스템 컬러 토큰 정리", "라이트/다크 토큰 통합", iso(6, 5), iso(6, 8), "mid", true],
+    ["메인 배너 시안 3종", "프로모션 배너 A/B", iso(6, 8), iso(6, 10), "high", false],
+    ["아이콘 세트 리뉴얼", "공통 아이콘 24px 정리", iso(6, 11), iso(6, 14), "mid", false],
+    ["프로토타입 인터랙션 정리", "주요 플로우 모션 가이드", iso(6, 15), iso(6, 18), "low", false],
   ];
   return T;
 }
@@ -114,7 +125,7 @@ function buildTasks(owner, defs) {
     const dummyInfo = [];
     for (const d of DUMMIES) {
       const id = await upsertUser(pool, d);
-      const defs = d.team === "개발팀" ? devTasks(id) : planningTasks(id);
+      const defs = d.team === "개발팀" ? devTasks(id) : d.team === "디자인팀" ? designTasks(id) : planningTasks(id);
       const tasks = buildTasks(id, defs);
       await pool.query("DELETE FROM tasks WHERE owner=?", [id]);
       const values = tasks.map((t, i) => taskToValues(t, i, id));

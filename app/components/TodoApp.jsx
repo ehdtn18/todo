@@ -7,6 +7,7 @@ import { useEffect } from "react";
 const SHELL_HTML = `
 <div class="wrap">
   <header>
+    <div class="bar-in">
     <div>
       <div class="kicker">MY TASKS</div>
       <h1>오늘의 할 일</h1>
@@ -19,6 +20,7 @@ const SHELL_HTML = `
       <button class="hbtn" id="themeBtn" title="다크/라이트 모드" aria-label="테마 전환"></button>
       <button class="hbtn" id="trashBtn" title="휴지통" aria-label="휴지통"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg><span class="tbadge" id="trashCount" style="display:none">0</span></button>
       <button class="hbtn" id="logoutBtn" title="로그아웃" aria-label="로그아웃"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg></button>
+    </div>
     </div>
   </header>
 
@@ -51,6 +53,7 @@ const SHELL_HTML = `
   </div>
 
   <div class="controls">
+    <div class="controls-in">
     <div class="seg" id="viewSeg">
       <button class="on" data-v="list">리스트</button>
       <button data-v="kanban">칸반</button>
@@ -71,6 +74,7 @@ const SHELL_HTML = `
         <button data-cm="day">일</button><button data-cm="week">주</button><button class="on" data-cm="month">월</button>
       </div>
       <button class="cnbtn" data-cn="-1" title="이전">‹</button><span class="ctitle" id="calTitle"></span><button class="cnbtn" data-cn="1" title="다음">›</button>
+    </div>
     </div>
   </div>
 
@@ -352,8 +356,8 @@ function runApp(signal, created) {
   function viewLabel(){if(viewTarget.type==="user")return viewTarget.name;if(viewTarget.type==="team")return viewTarget.team;return "내 할일";}
   // 팀 보기일 때 각 task 소유자 표시
   function ownerName(id){if(!id)return"";if(currentUser&&id===currentUser.id)return currentUser.name;const u=allUsers.find(function(x){return x.id===id;});return u?u.name:"";}
-  function ownerBadge(t){if(viewTarget.type!=="team")return"";const n=ownerName(t.owner);return n?'<span class="ownerbadge">'+esc(n)+'</span>':"";}
-  function ownerTag(t){if(viewTarget.type!=="team")return"";const n=ownerName(t.owner);return n?n+" · ":"";}
+  function ownerBadge(t){if(viewTarget.type==="me")return"";const n=ownerName(t.owner);if(!n)return"";const mine=currentUser&&t.owner===currentUser.id;return '<span class="ownerbadge'+(mine?" me":"")+'">'+esc(n)+'</span>';}
+  function ownerTag(t){if(viewTarget.type==="me")return"";const n=ownerName(t.owner);return n?n+" · ":"";}
   function updateViewAs(){
     const me=viewTarget.type==="me";
     $("viewAsLabel").textContent=me?"내 할일":viewLabel()+" (보기전용)";
@@ -947,6 +951,7 @@ function runApp(signal, created) {
 
   /* 릴리즈 내역 */
   const CHANGELOG=[
+    {v:"1.1.10",items:["헤더·컨트롤 바를 화면 전체 폭으로(풋터처럼) + 컨트롤 하단 전체 구분선","우선순위 보기·완료 보기 토글의 테두리 제거","담당자 배지: 내 업무는 파란색(내 이름)·타인은 회색으로 구분"]},
     {v:"1.1.9",items:["팀 보기에서 각 할 일에 담당자 배지 표시(리스트·칸반·달력)","우선순위 보기 그룹을 연한 배경 카드+간격으로 구분 강화(헤더 크게·검정)"]},
     {v:"1.1.8",items:["보기 전용 배너 제거 — 타팀/팀원을 보면 필터 버튼에 '기획팀 (보기전용)'처럼 표시","필터 옆 '내 할일로' 버튼으로 한 번에 내 할일 복귀","팀원 목록에 본인도 표시(자기 팀에서 본인 보임)","리스트 우선순위 보기: 그룹별 좌측 색 막대로 구분을 더 명확하게"]},
     {v:"1.1.7",items:["로그인/회원가입 도입 — 유저별로 할 일·휴지통·연차·설정 분리(팀: 기획·경영지원·개발·디자인·MD)","팀/팀원 '보기' 필터 — 내 할일 기본, 팀 전체나 특정 팀원 할일을 보기 전용으로 조회","초기 로딩 속도 개선: bootstrap 단일 요청·병렬 쿼리 + 함수 리전 서울(icn1)로 지연 최소화"]},
@@ -1380,7 +1385,8 @@ function runApp(signal, created) {
 
   // 컨트롤 바 sticky(헤더 높이에 맞춰 top) + fixed footer 높이만큼 하단 패딩 확보
   const headerEl=document.querySelector("header"),controlsEl=document.querySelector(".controls"),footerEl=document.querySelector("footer");
-  function syncStickyTop(){if(headerEl&&controlsEl)controlsEl.style.top=(headerEl.offsetHeight)+"px";if(footerEl)document.body.style.paddingBottom=(footerEl.offsetHeight+18)+"px";}
+  function setSbw(){try{const w=window.innerWidth-document.documentElement.clientWidth;document.documentElement.style.setProperty("--sbw",(w>0?w:0)+"px");}catch(e){}}
+  function syncStickyTop(){setSbw();if(headerEl&&controlsEl)controlsEl.style.top=(headerEl.offsetHeight)+"px";if(footerEl)document.body.style.paddingBottom=(footerEl.offsetHeight+18)+"px";}
   syncStickyTop();
   window.addEventListener("resize",syncStickyTop,{signal});
   if(window.ResizeObserver){const ro=new ResizeObserver(syncStickyTop);ro.observe(headerEl);if(footerEl)ro.observe(footerEl);signal.addEventListener("abort",function(){ro.disconnect();});}

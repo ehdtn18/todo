@@ -16,7 +16,8 @@ body{font-family:var(--sans);color:var(--ink);-webkit-font-smoothing:antialiased
 .wrap{max-width:1120px;margin:0 auto}
 button{font-family:var(--sans)}
 
-header{display:flex;align-items:center;justify-content:space-between;gap:14px;position:sticky;top:0;z-index:40;background:var(--bg);padding:8px 0 12px;margin-bottom:6px}
+header{position:sticky;top:0;z-index:40;background:var(--bg);margin-bottom:6px;margin-left:calc(50% - 50vw + var(--sbw,0px)/2);margin-right:calc(50% - 50vw + var(--sbw,0px)/2)}
+header .bar-in{max-width:1120px;margin:0 auto;padding:8px 18px 12px;display:flex;align-items:center;justify-content:space-between;gap:14px}
 .head-actions{display:flex;gap:8px;align-items:center}
 .kicker{font-size:11px;letter-spacing:.14em;color:var(--soft);font-weight:700;margin-bottom:6px}
 h1{font-size:24px;font-weight:700;letter-spacing:-.02em;color:var(--ink)}
@@ -90,7 +91,8 @@ h1{font-size:24px;font-weight:700;letter-spacing:-.02em;color:var(--ink)}
 .addbtn{flex-shrink:0;border:none;background:var(--accent);color:#fff;font-weight:600;font-size:15px;border-radius:11px;padding:11px 24px;cursor:pointer;transition:background .15s,transform .08s var(--ease),box-shadow .15s}
 .addbtn:hover{background:var(--accent-press);box-shadow:0 4px 14px rgba(49,130,246,.28)} .addbtn:active{transform:scale(.97)}
 
-.controls{display:flex;align-items:center;gap:9px;margin-bottom:14px;flex-wrap:wrap;position:sticky;top:74px;z-index:35;background:var(--bg);padding:8px 0}
+.controls{position:sticky;top:74px;z-index:35;background:var(--bg);margin-bottom:14px;border-bottom:1px solid var(--line);margin-left:calc(50% - 50vw + var(--sbw,0px)/2);margin-right:calc(50% - 50vw + var(--sbw,0px)/2)}
+.controls-in{max-width:1120px;margin:0 auto;padding:8px 18px;display:flex;align-items:center;gap:9px;flex-wrap:wrap}
 .seg{display:flex;gap:3px;background:#EAECEF;border-radius:11px;padding:3px}
 .seg button{border:none;background:transparent;font-size:13px;font-weight:500;color:var(--soft);padding:7px 13px;border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;transition:color .15s,background .2s var(--ease)}
 .seg button .c{font-size:11px;opacity:.7;margin-left:2px}
@@ -482,7 +484,7 @@ html:has(.overlay.open){overflow:hidden}
   .prad{flex:1;justify-content:center;padding:10px 8px}
   .addbtn{order:2;width:100%;padding:13px}
 
-  .controls{gap:8px}
+  .controls-in{gap:8px}
   .controls .spacer{display:none}
   #viewSeg,#filterSeg{flex:1}
   #viewSeg button,#filterSeg button{flex:1;justify-content:center}
@@ -498,7 +500,7 @@ html:has(.overlay.open){overflow:hidden}
 /* ===== 반응형 보강 (v1.1.0) ===== */
 /* 태블릿~모바일: 컨트롤 줄바꿈, 달력 네비/세그 전폭 */
 @media(max-width:680px){
-  .controls{gap:7px}
+  .controls-in{gap:7px}
   .calnav{width:100%;margin-top:2px}
   #calModeSeg{flex:1}
   #calModeSeg button{flex:1;justify-content:center}
@@ -593,8 +595,7 @@ header{animation:fadeUp .28s var(--ease)}
 .resetbtn:hover{border-color:var(--g-weak);color:var(--ink)} .resetbtn:active{transform:scale(.97)}
 
 /* 리스트 완료 숨기기 토글 (#17) */
-.swrow.listhide{border:1px solid var(--line);border-radius:10px;padding:6px 11px}
-.swrow.listhide:hover{border-color:var(--g-weak)}
+.swrow.listhide{padding:6px 4px}
 
 /* 카드 자세히보기 (#15) */
 .cardmore{margin-top:9px;border:1px solid var(--line);background:var(--paper);color:var(--ink2);font-size:12.5px;font-weight:600;border-radius:8px;padding:6px 12px;cursor:pointer;transition:border-color .15s,color .15s,background .15s,transform .1s var(--ease)}
@@ -810,7 +811,8 @@ select.auth-in{cursor:pointer}
 .viewas.active{border-color:var(--accent);color:var(--accent);background:var(--accent-bg)}
 .viewas .va-caret{opacity:.6}
 .viewpop .sortpop-list{max-height:720px}
-.ownerbadge{display:inline-block;font-size:11px;line-height:1.5;font-weight:700;color:var(--accent);background:var(--accent-bg);border-radius:6px;padding:1px 7px;margin-right:7px;vertical-align:middle}
+.ownerbadge{display:inline-block;font-size:11px;line-height:1.5;font-weight:700;color:var(--soft);background:var(--chip);border-radius:6px;padding:1px 7px;margin-right:7px;vertical-align:middle}
+.ownerbadge.me{color:var(--accent);background:var(--accent-bg)}
 .kcard .ownerbadge{font-size:10.5px;padding:0 6px;margin-right:5px}
 #viewReset{margin-top:10px;border:none;border-radius:10px;background:var(--accent);color:#fff;font-weight:700;padding:10px 0}
 #viewReset:hover{background:var(--accent-press);color:#fff}

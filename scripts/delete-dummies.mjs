@@ -2,7 +2,7 @@
 // 실행(Git Bash): DB_* / DB_SSL=true 설정 후  node scripts/delete-dummies.mjs
 import { getPool } from "../lib/db.js";
 
-const EMAILS = ["dajeong@careid.center", "sumin@careid.center", "jaehyuk@careid.center"];
+const EMAILS = ["dajeong@careid.center", "sumin@careid.center", "jaehyuk@careid.center", "yunji@careid.center"];
 
 (async () => {
   try {
