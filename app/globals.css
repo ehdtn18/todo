@@ -28,10 +28,20 @@ h1{font-size:24px;font-weight:700;letter-spacing:-.02em;color:var(--ink)}
 .ring-track{stroke:var(--line)}
 #prog{stroke:var(--g-strong)}
 
-.composer{position:relative;background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:30px}
-/* 폼 강조용: 카드 뒤 아주 약한 파란 radial 글로우 */
-.composer::before{content:"";position:absolute;inset:-46px -38px -34px;z-index:-1;border-radius:40px;background:radial-gradient(72% 82% at 50% 34%, rgba(49,130,246,.16), rgba(49,130,246,.055) 48%, transparent 74%);filter:blur(10px);pointer-events:none}
-:root[data-theme="dark"] .composer::before{background:radial-gradient(72% 82% at 50% 34%, rgba(63,142,252,.22), rgba(63,142,252,.08) 48%, transparent 74%)}
+.composer{position:relative;background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:36px;box-shadow:0 20px 46px -24px rgba(49,130,246,.30),0 8px 22px -12px rgba(0,0,0,.07)}
+/* 폼 강조: 카드 뒤 부드러운 파스텔 다색 블룸 → 입력창이 떠 보이게 */
+.composer::before{content:"";position:absolute;inset:-66px -56px -58px;z-index:-1;border-radius:72px;pointer-events:none;filter:blur(30px);
+  background:
+    radial-gradient(42% 60% at 24% 44%, rgba(99,102,241,.24), transparent 70%),
+    radial-gradient(46% 62% at 78% 56%, rgba(56,189,248,.22), transparent 72%),
+    radial-gradient(54% 72% at 56% 24%, rgba(168,85,247,.14), transparent 72%),
+    radial-gradient(40% 55% at 60% 86%, rgba(45,212,191,.12), transparent 72%)}
+:root[data-theme="dark"] .composer::before{
+  background:
+    radial-gradient(42% 60% at 24% 44%, rgba(129,140,248,.28), transparent 70%),
+    radial-gradient(46% 62% at 78% 56%, rgba(56,189,248,.24), transparent 72%),
+    radial-gradient(54% 72% at 56% 24%, rgba(192,132,252,.18), transparent 72%),
+    radial-gradient(40% 55% at 60% 86%, rgba(45,212,191,.14), transparent 72%)}
 .title-in{width:100%;border:1px solid var(--line);background:var(--paper);font-family:var(--sans);font-size:16px;font-weight:600;color:var(--ink);padding:11px 13px;margin-bottom:9px;border-radius:10px;transition:border-color .15s,box-shadow .15s}
 .title-in::placeholder{color:var(--faint)} .title-in:focus{outline:none;border-color:var(--faint)}
 .title-in.err{border-color:var(--danger);box-shadow:0 0 0 2px rgba(240,68,82,.18);background:rgba(240,68,82,.04)}
