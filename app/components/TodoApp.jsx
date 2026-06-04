@@ -24,7 +24,7 @@ const SHELL_HTML = `
 
   <div class="composer">
     <div class="flabel">제목<button class="fhelp" type="button" aria-label="도움말" data-help="제목"><i>?</i><span class="fhelp-tip">할 일의 이름이에요. 한눈에 알아볼 수 있게 짧게 적어주세요. 입력 후 Enter를 누르면 내용으로 이동해요.</span></button></div>
-    <input type="text" id="tTitle" class="title-in" placeholder="제목을 입력하세요" autocomplete="off">
+    <input type="text" id="tTitle" class="title-in" placeholder="제목을 입력하세요" autocomplete="off" readonly>
     <div class="flabel">내용 <span class="flabel-hint">체크리스트로 단계(중간컨펌)도 작성하세요</span><button class="fhelp" type="button" aria-label="도움말" data-help="내용"><i>?</i><span class="fhelp-tip">상세 내용을 자유롭게 작성해요. 슬래시(/)로 블록 메뉴를 열고, 마크다운 단축키(#, -, 1., [], &gt; 등)를 쓸 수 있어요. 느낌표(!)+스페이스로 n차 컨펌을 추가하면 날짜는 숫자만 입력해도 자동 정리돼요.</span></button></div>
     <div class="editor" id="editor" contenteditable="true"></div>
     <div class="slash" id="slash"></div>
@@ -798,6 +798,8 @@ function runApp(signal, created) {
   function paintCRange(){const lab=labelRangeT(cRange.start,cRange.end,cRange.startTime,cRange.endTime);const el=$("rangeText");if(lab){el.textContent=lab;el.classList.remove("empty");}else{el.textContent="날짜와 시간 선택";el.classList.add("empty");}$("rangeField").classList.remove("err");}
   $("rangeField").addEventListener("click",function(){$("rangeField").classList.remove("err");openCal($("rangeField"),cRange,function(s,e,st,et){cRange.start=s;cRange.end=e;cRange.startTime=st||cRange.startTime;cRange.endTime=et||cRange.endTime;paintCRange();});});
   $("tTitle").addEventListener("input",function(){$("tTitle").classList.remove("err");});
+  // 브라우저 자동완성이 제목칸에 저장된 이메일을 넣는 것 방지: 실제 포커스 전까지 readonly
+  (function(){const tt=$("tTitle");function unlock(){tt.removeAttribute("readonly");}tt.addEventListener("focus",unlock,{signal});tt.addEventListener("pointerdown",unlock,{signal});})();
 
   function clearComposer(){$("tTitle").value="";$("tTitle").classList.remove("err");cEditor.reset();cEditor.clearErr();cRange={start:null,end:null,startTime:"09:00",endTime:"18:00"};paintCRange();cPri.set(null);cPri.clearErr();cIncHol=false;$("incHolSw").classList.remove("on");if(cNotifyTF)cNotifyTF.set("09:00");}
 
@@ -974,6 +976,7 @@ function runApp(signal, created) {
 
   /* 릴리즈 내역 */
   const CHANGELOG=[
+    {v:"1.1.12",items:["제목 입력칸에 브라우저 저장 이메일이 자동완성되던 문제 수정"]},
     {v:"1.1.11",items:["마이페이지 신설(로그인 정보 클릭) — 좌측 탭으로 계정·연차 관리","계정 탭에서 비밀번호 변경과 로그아웃","연차 관리를 마이페이지로 이동(헤더 연차·로그아웃 버튼 제거)","상단 우측은 로그인정보·알림·다크모드·휴지통만 유지","정렬에서 '우선순위순' 제거(우선순위 보기와 중복)"]},
     {v:"1.1.10",items:["헤더·컨트롤 바를 화면 전체 폭으로(풋터처럼) + 컨트롤 하단 전체 구분선","우선순위 보기·완료 보기 토글의 테두리 제거","담당자 배지: 내 업무는 파란색(내 이름)·타인은 회색으로 구분"]},
     {v:"1.1.9",items:["팀 보기에서 각 할 일에 담당자 배지 표시(리스트·칸반·달력)","우선순위 보기 그룹을 연한 배경 카드+간격으로 구분 강화(헤더 크게·검정)"]},
