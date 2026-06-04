@@ -124,10 +124,11 @@ h1{font-size:24px;font-weight:700;letter-spacing:-.02em;color:var(--ink)}
 .sortpop-reset{width:100%;margin-top:8px;border:none;border-top:1px solid var(--line2);background:transparent;color:var(--soft);font-size:13px;font-weight:600;padding:11px 0 4px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:color .15s}
 .sortpop-reset:hover{color:var(--danger)}
 /* 우선순위 그룹화 */
-.prigroup{margin:0 0 32px;padding:16px 16px 18px;background:var(--soft-bg);border-radius:16px}
+.prigroup{margin:0 0 32px;padding:16px 16px 18px;background:var(--soft-bg);border:1px solid var(--line);border-radius:16px;box-shadow:0 1px 3px rgba(0,0,0,.06),0 8px 20px -10px rgba(0,0,0,.10)}
 .prigroup:last-child{margin-bottom:0}
-.prigroup-hd{display:flex;align-items:center;gap:10px;padding:0 2px;margin-bottom:14px;font-size:19px;font-weight:800;color:var(--ink)}
-.prigroup-hd .pri{font-weight:800;font-size:19px}
+.prigroup-hd{display:flex;align-items:center;gap:10px;padding:0 2px;margin-bottom:14px;font-size:19px;font-weight:800;color:#000}
+.prigroup-hd .pri{font-weight:800;font-size:19px;color:#000}
+:root[data-theme="dark"] .prigroup-hd,:root[data-theme="dark"] .prigroup-hd .pri{color:#fff}
 .prigroup-n{margin-left:2px;font-size:12.5px;font-weight:700;color:var(--soft);background:var(--paper);border:1px solid var(--line);border-radius:99px;padding:2px 10px}
 .switch{display:inline-block;width:38px;height:22px;border-radius:99px;background:var(--g-weak);position:relative;transition:background .2s var(--ease);flex-shrink:0}
 .switch.on{background:var(--accent)}
@@ -809,6 +810,8 @@ select.auth-in{cursor:pointer}
 .viewas.active{border-color:var(--accent);color:var(--accent);background:var(--accent-bg)}
 .viewas .va-caret{opacity:.6}
 .viewpop .sortpop-list{max-height:720px}
+#viewReset{margin-top:10px;border:none;border-radius:10px;background:var(--accent);color:#fff;font-weight:700;padding:10px 0}
+#viewReset:hover{background:var(--accent-press);color:#fff}
 .viewpop .vp-sub{font-size:11px;color:var(--faint);font-weight:500;margin-left:6px}
 .viewpop .vp-teamhd{font-weight:700;color:var(--ink);margin-top:4px}
 .viewpop .vp-mem{padding-left:24px;font-size:13px;color:var(--ink2)}
