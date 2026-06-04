@@ -65,8 +65,11 @@ const SHELL_HTML = `
       <button data-ll="cards" title="카드형"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></button>
     </div>
     <button class="sorticon" id="sortBtn" title="정렬"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 16 4 4 4-4"/><path d="M7 20V4"/><path d="m21 8-4-4-4 4"/><path d="M17 4v16"/></svg><span class="sortdot" id="sortDot"></span></button>
-    <button class="swrow listhide" id="priGroupBtn"><span class="swlbl">우선순위 보기</span><span class="switch" id="priGroupSw"><span class="knob"></span></span></button>
-    <button class="swrow listhide" id="listHideBtn"><span class="swlbl">완료 보기</span><span class="switch" id="listHideSw"><span class="knob"></span></span></button>
+    <div class="searchwrap" id="searchWrap">
+      <button class="searchbtn" id="searchBtn" title="검색" aria-label="검색"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-3.6-3.6"/></svg></button>
+      <input type="text" class="searchin" id="searchInput" placeholder="제목·내용 검색" autocomplete="off">
+    </div>
+    <button class="sorticon" id="dispBtn" title="보기 옵션 (우선순위·완료)" aria-label="보기 옵션"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="21" x2="14" y1="4" y2="4"/><line x1="10" x2="3" y1="4" y2="4"/><line x1="21" x2="12" y1="12" y2="12"/><line x1="8" x2="3" y1="12" y2="12"/><line x1="21" x2="16" y1="20" y2="20"/><line x1="12" x2="3" y1="20" y2="20"/><line x1="14" x2="14" y1="2" y2="6"/><line x1="8" x2="8" y1="10" y2="14"/><line x1="16" x2="16" y1="18" y2="22"/></svg><span class="sortdot" id="dispDot"></span></button>
     <div class="calnav" id="calNav" style="display:none">
       <div class="seg" id="calModeSeg">
         <button data-cm="day">일</button><button data-cm="week">주</button><button class="on" data-cm="month">월</button>
@@ -80,6 +83,12 @@ const SHELL_HTML = `
     <div class="sortpop-sb"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-3.5-3.5"/></svg><input type="text" id="sortSearch" placeholder="정렬 기준" autocomplete="off"></div>
     <div class="sortpop-list" id="sortList"></div>
     <button class="sortpop-reset" id="sortReset"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 109-9 9 9 0 00-6.4 2.6L3 8"/><path d="M3 3v5h5"/></svg>정렬 초기화</button>
+  </div>
+
+  <div class="sortpop disppop" id="dispPop">
+    <button class="swrow disp-row" id="priGroupBtn"><span class="swlbl">우선순위 보기</span><span class="switch" id="priGroupSw"><span class="knob"></span></span></button>
+    <button class="swrow disp-row" id="listHideBtn"><span class="swlbl">완료 보기</span><span class="switch" id="listHideSw"><span class="knob"></span></span></button>
+    <button class="sortpop-reset" id="dispReset"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 109-9 9 9 0 00-6.4 2.6L3 8"/><path d="M3 3v5h5"/></svg>보기 초기화</button>
   </div>
 
   <div class="sortpop viewpop" id="viewPop">
@@ -297,7 +306,7 @@ function runApp(signal, created) {
   let tasks=[], trash=[], leaves=[], filter="all", sortBy="created", viewMode="list", listLayout="rows", editingId=null,
       cardsExpanded=false, listHideDone=true, priGroup=false, showTime=false, calMode="month", calRef=null, calDays="all", calHideDone=true, theme="light",
       lvType="full", lvHourVal=2, lvRange={start:null,end:null};
-  let currentUser=null, allUsers=[], viewTarget={type:"me"}, mineTasks=[], readOnly=false;
+  let currentUser=null, allUsers=[], viewTarget={type:"me"}, mineTasks=[], readOnly=false, searchQ="";
   const $=id=>document.getElementById(id);
 
   function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
@@ -978,6 +987,7 @@ function runApp(signal, created) {
 
   /* 릴리즈 내역 */
   const CHANGELOG=[
+    {v:"1.1.14",items:["우선순위 보기·완료 보기를 하나의 '보기 옵션' 드롭다운으로 통합(초기화 포함)","검색 추가 — 정렬 옆 돋보기를 누르면 입력창이 펼쳐지고, 입력 즉시 제목·내용으로 실시간 검색(엔터 불필요)","리스트 컨트롤을 정렬·검색·보기옵션 3개 버튼으로 정리"]},
     {v:"1.1.13",items:["회원가입에서 성·이름을 따로 입력(전체 이름은 DB에 보관)","화면에는 이름만 표시(담당자 배지·로그인 칩·팀원 목록)","로그인 칩에 사람 아이콘 추가 + 우측 버튼들과 동일한 흰색·높이로 통일"]},
     {v:"1.1.12",items:["제목 입력칸에 브라우저 저장 이메일이 자동완성되던 문제 수정"]},
     {v:"1.1.11",items:["마이페이지 신설(로그인 정보 클릭) — 좌측 탭으로 계정·연차 관리","계정 탭에서 비밀번호 변경과 로그아웃","연차 관리를 마이페이지로 이동(헤더 연차·로그아웃 버튼 제거)","상단 우측은 로그인정보·알림·다크모드·휴지통만 유지","정렬에서 '우선순위순' 제거(우선순위 보기와 중복)"]},
@@ -1158,8 +1168,9 @@ function runApp(signal, created) {
   document.querySelectorAll("#listLayoutSeg button").forEach(function(b){b.onclick=function(){listLayout=b.dataset.ll;syncLayoutSeg();saveLayout();saveSettings();render();};});
   document.querySelectorAll("#filterSeg button").forEach(function(b){b.onclick=function(){document.querySelectorAll("#filterSeg button").forEach(x=>x.classList.remove("on"));b.classList.add("on");filter=b.dataset.f;render();};});
   document.querySelectorAll("#calModeSeg button").forEach(function(b){b.onclick=function(){calMode=b.dataset.cm;try{localStorage.setItem(CMKEY,calMode);}catch(e){}syncCalModeSeg();saveSettings();render();};});
-  $("listHideBtn").onclick=function(){listHideDone=!listHideDone;$("listHideSw").classList.toggle("on",!listHideDone);saveSettings();render();};
-  $("priGroupBtn").onclick=function(){priGroup=!priGroup;$("priGroupSw").classList.toggle("on",priGroup);saveSettings();render();};
+  $("listHideBtn").onclick=function(){listHideDone=!listHideDone;syncLayoutToggles();saveSettings();render();};
+  $("priGroupBtn").onclick=function(){priGroup=!priGroup;syncLayoutToggles();saveSettings();render();};
+  $("dispReset").onclick=function(){priGroup=false;listHideDone=true;syncLayoutToggles();saveSettings();render();};
 
   // 폼 도움말(?) — 데스크탑은 hover 툴팁(CSS), 클릭 시 모달(모바일 포함)
   document.querySelectorAll(".fhelp").forEach(function(b){b.onclick=function(e){e.preventDefault();e.stopPropagation();const tip=b.querySelector(".fhelp-tip");$("hmTitle").textContent=b.dataset.help||"도움말";$("hmBody").textContent=tip?tip.textContent:"";$("helpModal").classList.add("open");};});
@@ -1172,6 +1183,7 @@ function runApp(signal, created) {
     $("listHideSw").classList.toggle("on",!listHideDone);
     $("priGroupSw").classList.toggle("on",priGroup);
     $("sortDot").style.display=(sortBy&&sortBy!=="created")?"block":"none";
+    const dd=$("dispDot");if(dd)dd.style.display=(priGroup||!listHideDone)?"block":"none";
   }
 
   /* ===== 정렬 드롭다운 ===== */
@@ -1188,16 +1200,36 @@ function runApp(signal, created) {
   $("sortReset").onclick=function(){applySort("created");};
   document.addEventListener("mousedown",function(e){if(sortPopOpen()&&!$("sortPop").contains(e.target)&&!$("sortBtn").contains(e.target))closeSortPop();},{signal});
   window.addEventListener("resize",function(){if(sortPopOpen())positionSortPop();},{signal});
+
+  /* ===== 보기 옵션 드롭다운(우선순위·완료) ===== */
+  function dispPopOpen(){return $("dispPop").classList.contains("open");}
+  function positionDispPop(){const r=$("dispBtn").getBoundingClientRect();const pop=$("dispPop");const pw=pop.offsetWidth||220;let left=r.right-pw,top=r.bottom+8;if(left+pw>window.innerWidth-8)left=window.innerWidth-8-pw;if(left<8)left=8;pop.style.left=left+"px";pop.style.top=top+"px";const ph=pop.offsetHeight;if(top+ph>window.innerHeight-8){const nt=r.top-ph-8;pop.style.top=(nt<8?8:nt)+"px";}}
+  function openDispPop(){syncLayoutToggles();$("dispPop").classList.add("open");positionDispPop();}
+  function closeDispPop(){$("dispPop").classList.remove("open");}
+  $("dispBtn").onclick=function(e){e.stopPropagation();if(dispPopOpen())closeDispPop();else openDispPop();};
+  document.addEventListener("mousedown",function(e){if(dispPopOpen()&&!$("dispPop").contains(e.target)&&!$("dispBtn").contains(e.target))closeDispPop();},{signal});
+  window.addEventListener("resize",function(){if(dispPopOpen())positionDispPop();},{signal});
+
+  /* ===== 검색 (노션식 인라인 확장 · 즉시 검색) ===== */
+  function searchOpen(){return $("searchWrap").classList.contains("open");}
+  function openSearch(){$("searchWrap").classList.add("open");setTimeout(function(){$("searchInput").focus();},60);}
+  function closeSearch(){$("searchWrap").classList.remove("open");$("searchInput").value="";if(searchQ){searchQ="";render();}}
+  $("searchBtn").onclick=function(e){e.stopPropagation();if(searchOpen())closeSearch();else openSearch();};
+  $("searchInput").addEventListener("input",function(){searchQ=this.value.trim().toLowerCase();render();});
+  $("searchInput").addEventListener("keydown",function(e){if(e.key==="Escape"){closeSearch();}});
+  $("searchInput").addEventListener("blur",function(){if(!this.value.trim())$("searchWrap").classList.remove("open");});
   function calShift(dir){const d=new Date((calRef||todayISO())+"T00:00:00");if(calMode==="month")d.setMonth(d.getMonth()+dir);else if(calMode==="week")d.setDate(d.getDate()+dir*7);else d.setDate(d.getDate()+dir);calRef=ymd(d);}
   $("calNav").addEventListener("click",function(e){const b=e.target.closest("[data-cn]");if(b){calShift(+b.dataset.cn);render();}});
   function updateControls(){
     const isList=viewMode==="list", isCal=viewMode==="calendar", isKan=viewMode==="kanban";
     $("listLayoutSeg").style.display=isList?"flex":"none";
+    $("searchWrap").style.display=(isList||isKan)?"inline-flex":"none";
     $("sortBtn").style.display=(isList||isKan)?"inline-flex":"none";
-    $("priGroupBtn").style.display=isList?"inline-flex":"none";
-    $("listHideBtn").style.display=isList?"inline-flex":"none";
+    $("dispBtn").style.display=isList?"inline-flex":"none";
     $("calNav").style.display=isCal?"flex":"none";
     if(!isList&&!isKan&&sortPopOpen())closeSortPop();
+    if(!isList&&dispPopOpen())closeDispPop();
+    if(!(isList||isKan)){if(searchOpen()){$("searchWrap").classList.remove("open");$("searchInput").value="";}searchQ="";}
   }
 
   const CHK='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2"><path d="M20 6L9 17l-5-5"/></svg>';
@@ -1208,6 +1240,7 @@ function runApp(signal, created) {
   function pillHtml(t){const dl=dateLabel(t);if(!dl)return"";const di=dueInfo(refDate(t));const dd=di?'<span class="dday'+(di.cls?" "+di.cls:"")+'">'+di.label+'</span>':"";return '<span class="due">'+CAL+dl+'</span>'+dd;}
   function cfChip(t){const cfs=taskConfirms(t);if(!cfs.length)return"";const done=cfs.filter(c=>c.done).length;return '<span class="cf-chip'+(done===cfs.length?" all":"")+'">컨펌 '+done+'/'+cfs.length+'</span>';}
   function metaHtml(t,withEdited){const e=(withEdited&&t.history&&t.history.length)?'<span class="edited" data-act="log">수정됨 '+t.history.length+'회</span>':"";return '<div class="meta"><span class="pri">'+priIcon(t.pri)+priTxt[t.pri]+'</span>'+pillHtml(t)+cfChip(t)+e+'</div>';}
+  function matchSearch(t){if(!searchQ)return true;return (t.title||"").toLowerCase().indexOf(searchQ)>=0||(t.body||"").toLowerCase().indexOf(searchQ)>=0;}
   // 칸반: 중요도 한 줄, 날짜+D-day 같은 줄
   function kanbanMeta(t){return '<div class="kmeta"><div class="kmeta-row"><span class="pri">'+priIcon(t.pri)+priTxt[t.pri]+'</span>'+cfChip(t)+'</div><div class="kmeta-row">'+pillHtml(t)+'</div></div>';}
   function emptyHtml(msg){return '<div class="empty"><svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg><p>'+msg+'</p></div>';}
@@ -1244,11 +1277,11 @@ function runApp(signal, created) {
       return '<li class="task clickable '+(t.done?"done":"")+'" data-id="'+t.id+'" data-act="e"><button class="check" data-act="t" aria-label="완료" title="완료 처리">'+CHK+'</button><div class="body"><div class="title">'+ownerBadge(t)+esc(t.title)+'</div>'+body+metaHtml(t,true)+more+'</div><div class="acts"><button class="iconbtn" data-act="d" title="삭제">'+TRASH+'</button></div></li>';
     }
     function ul(items){return '<ul class="list'+(isCard?" cards":"")+'">'+items.map(taskLi).join("")+'</ul>';}
-    let arr=tasks;
+    let arr=tasks.filter(matchSearch);
     if(filter==="active")arr=arr.filter(t=>!t.done);else if(filter==="done")arr=arr.filter(t=>t.done);
     if(listHideDone)arr=arr.filter(t=>!t.done);
     arr=sortT(arr);
-    if(!arr.length){$("view").innerHTML=emptyHtml(filter==="done"?"완료된 항목이 없어요":(filter==="active"||listHideDone)?"진행 중인 일이 없어요":"위에서 새 할 일을 추가해보세요");return;}
+    if(!arr.length){$("view").innerHTML=emptyHtml(searchQ?'"'+esc(searchQ)+'" 검색 결과가 없어요':filter==="done"?"완료된 항목이 없어요":(filter==="active"||listHideDone)?"진행 중인 일이 없어요":"위에서 새 할 일을 추가해보세요");return;}
     if(priGroup){
       const groups=[{k:"high",l:"높음"},{k:"mid",l:"중간"},{k:"low",l:"낮음"}];
       let html="";
@@ -1261,7 +1294,7 @@ function runApp(signal, created) {
   // 칸반 (#4 카드 클릭 → 수정, 연필 제거)
   const COLS=[{k:"todo",l:"시작전"},{k:"doing",l:"진행 중"},{k:"done",l:"완료"},{k:"drop",l:"Drop"}];
   function renderKanban(){
-    const g={todo:[],doing:[],done:[],drop:[]};tasks.forEach(t=>g[classify(t)].push(t));Object.keys(g).forEach(k=>g[k]=sortT(g[k]));
+    const g={todo:[],doing:[],done:[],drop:[]};tasks.filter(matchSearch).forEach(t=>g[classify(t)].push(t));Object.keys(g).forEach(k=>g[k]=sortT(g[k]));
     const cols=COLS.map(function(c){const items=g[c.k];const cards=items.length?items.map(function(t){return '<div class="kcard '+(t.done?"done":"")+'" draggable="true" data-id="'+t.id+'" data-act="e"><div class="krow"><button class="check sm" data-act="t" aria-label="완료" title="완료 처리">'+CHK+'</button><div class="ktitle">'+ownerBadge(t)+esc(t.title)+'</div></div>'+kanbanMeta(t)+'</div>';}).join(""):'<div class="kempty">없음</div>';return '<div class="kcol"><div class="khd"><span>'+c.l+'</span><span class="kcount">'+items.length+'</span></div><div class="kbody" data-col="'+c.k+'">'+cards+'</div></div>';}).join("");
     $("view").innerHTML='<div class="khint">카드를 클릭하면 수정, 완료 칸으로 끌어다 놓으면 완료 처리돼요. 분류는 기간·오늘 날짜로 자동 결정됩니다.</div><div class="kanban">'+cols+'</div>';
   }
