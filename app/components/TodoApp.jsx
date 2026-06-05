@@ -65,17 +65,17 @@ const SHELL_HTML = `
       <button data-ll="cards" title="카드형"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></button>
     </div>
     <button class="sorticon" id="sortBtn" title="정렬"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 16 4 4 4-4"/><path d="M7 20V4"/><path d="m21 8-4-4-4 4"/><path d="M17 4v16"/></svg><span class="sortdot" id="sortDot"></span></button>
-    <div class="searchwrap" id="searchWrap">
-      <button class="searchbtn" id="searchBtn" title="검색" aria-label="검색"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-3.6-3.6"/></svg></button>
-      <input type="text" class="searchin" id="searchInput" placeholder="제목·내용 검색" autocomplete="off">
-      <button class="searchclear" id="searchClear" title="검색어 지우기" aria-label="검색어 지우기" style="display:none"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
-    </div>
     <button class="sorticon" id="dispBtn" title="보기 옵션 (우선순위·완료)" aria-label="보기 옵션"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="21" x2="14" y1="4" y2="4"/><line x1="10" x2="3" y1="4" y2="4"/><line x1="21" x2="12" y1="12" y2="12"/><line x1="8" x2="3" y1="12" y2="12"/><line x1="21" x2="16" y1="20" y2="20"/><line x1="12" x2="3" y1="20" y2="20"/><line x1="14" x2="14" y1="2" y2="6"/><line x1="8" x2="8" y1="10" y2="14"/><line x1="16" x2="16" y1="18" y2="22"/></svg><span class="sortdot" id="dispDot"></span></button>
     <div class="calnav" id="calNav" style="display:none">
       <div class="seg" id="calModeSeg">
         <button data-cm="day">일</button><button data-cm="week">주</button><button class="on" data-cm="month">월</button>
       </div>
       <button class="cnbtn" data-cn="-1" title="이전">‹</button><span class="ctitle" id="calTitle"></span><button class="cnbtn" data-cn="1" title="다음">›</button>
+    </div>
+    <div class="searchwrap" id="searchWrap">
+      <button class="searchbtn" id="searchBtn" title="검색" aria-label="검색"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-3.6-3.6"/></svg></button>
+      <input type="text" class="searchin" id="searchInput" placeholder="제목·내용 검색" autocomplete="off">
+      <button class="searchclear" id="searchClear" title="검색어 지우기" aria-label="검색어 지우기" style="display:none"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
     </div>
     </div>
   </div>
@@ -1144,6 +1144,7 @@ function runApp(signal, created) {
 
   /* 릴리즈 내역 */
   const CHANGELOG=[
+    {v:"1.1.29",items:["대시보드 '진행 현황' 위계 정리 — 진행 중(파랑)·완료(회색)·전체(구분선) 구조로 명확하게","우선순위·상태 막대를 파란색/회색 위계로 정리(높음·진행 중=파랑)","리스트 검색 버튼을 맨 오른쪽으로 이동","달력에도 검색 추가"]},
     {v:"1.1.28",items:["n차 컨펌: 날짜 부분에서 Backspace 시 날짜만 통째로 지우고(메모는 유지) 다시 입력 가능","리스트 미리보기에도 번호 계층(1, 1-1, 1-1-1) 적용","에디터 실행 취소(Ctrl+Z)·다시 실행(Ctrl+Shift+Z / Ctrl+Y) 추가 — 최대 50단계 기억"]},
     {v:"1.1.27",items:["에디터: 목록·글머리 항목 중간에서 Enter 시 문장이 커서 기준으로 쪼개져 새 항목으로 넘어가도록 수정","번호 목록 들여쓰기 시 1 → 1-1 → 1-1-1 계층 번호 표시","글머리·번호 목록 들여쓰기를 최대 5단계로 제한"]},
     {v:"1.1.26",items:["연차 사용 내역을 최신 날짜순(위→아래)으로 정렬","날짜 선택 전에는 연차 신청 버튼 비활성화","시간차 시간 드롭다운을 09·11·14·16·18로 변경하고 점심(12~13시) 제외해 계산(09~14=4시간, 09~16=6시간)"]},
@@ -1396,13 +1397,13 @@ function runApp(signal, created) {
   function updateControls(){
     const isList=viewMode==="list", isCal=viewMode==="calendar", isKan=viewMode==="kanban";
     $("listLayoutSeg").style.display=isList?"flex":"none";
-    $("searchWrap").style.display=(isList||isKan)?"inline-flex":"none";
+    $("searchWrap").style.display=(isList||isKan||isCal)?"inline-flex":"none";
     $("sortBtn").style.display=(isList||isKan)?"inline-flex":"none";
     $("dispBtn").style.display=isList?"inline-flex":"none";
     $("calNav").style.display=isCal?"flex":"none";
     if(!isList&&!isKan&&sortPopOpen())closeSortPop();
     if(!isList&&dispPopOpen())closeDispPop();
-    if(!(isList||isKan)){if(searchOpen()){$("searchWrap").classList.remove("open");$("searchInput").value="";}searchQ="";}
+    if(!(isList||isKan||isCal)){if(searchOpen()){$("searchWrap").classList.remove("open");$("searchInput").value="";}searchQ="";}
   }
 
   const CHK='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2"><path d="M20 6L9 17l-5-5"/></svg>';
@@ -1433,7 +1434,7 @@ function runApp(signal, created) {
     const rc=tasks.slice().sort((a,b)=>b.created-a.created).slice(0,5);
     function bar(label,n,max,cls){return '<div class="db-bar"><span class="db-bl">'+label+'</span><span class="db-bt"><span class="db-bf '+(cls||"")+'" style="width:'+(n/max*100)+'%"></span></span><span class="db-bn">'+n+'</span></div>';}
     let h='<div class="dash">';
-    h+='<div class="dcard dcard-hero"><div class="dc-h">진행 현황</div><div class="dhero"><svg width="96" height="96" viewBox="0 0 72 72"><circle cx="36" cy="36" r="30" fill="none" stroke="var(--line)" stroke-width="7"></circle><circle cx="36" cy="36" r="30" fill="none" stroke="var(--accent)" stroke-width="7" stroke-linecap="round" stroke-dasharray="'+C.toFixed(1)+'" stroke-dashoffset="'+off.toFixed(1)+'" transform="rotate(-90 36 36)"></circle><text x="36" y="41" text-anchor="middle" font-size="16" font-weight="700" fill="var(--ink)">'+pct+'%</text></svg><div class="dhero-n"><div><b>'+total+'</b> 전체</div><div><b>'+active+'</b> 진행 중</div><div><b>'+done+'</b> 완료</div></div></div></div>';
+    h+='<div class="dcard dcard-hero"><div class="dc-h">진행 현황</div><div class="dhero"><svg width="96" height="96" viewBox="0 0 72 72"><circle cx="36" cy="36" r="30" fill="none" stroke="var(--line)" stroke-width="7"></circle><circle cx="36" cy="36" r="30" fill="none" stroke="var(--accent)" stroke-width="7" stroke-linecap="round" stroke-dasharray="'+C.toFixed(1)+'" stroke-dashoffset="'+off.toFixed(1)+'" transform="rotate(-90 36 36)"></circle><text x="36" y="41" text-anchor="middle" font-size="16" font-weight="700" fill="var(--ink)">'+pct+'%</text></svg><div class="dhero-n"><div class="dstat doing"><span class="ds-dot"></span><span class="ds-l">진행 중</span><b>'+active+'</b></div><div class="dstat done"><span class="ds-dot"></span><span class="ds-l">완료</span><b>'+done+'</b></div><div class="dstat total"><span class="ds-l">전체</span><b>'+total+'</b></div></div></div></div>';
     h+='<div class="dcard"><div class="dc-h">마감 임박</div>'+(up.length?up.map(function(t){const di=dueInfo(refDate(t));return '<div class="drow" data-act="e" data-id="'+t.id+'"><span class="dr-t">'+esc(t.title)+'</span><span class="dday'+(di&&di.cls?" "+di.cls:"")+'">'+(di?di.label:"")+'</span></div>';}).join(""):'<div class="dempty">예정된 마감이 없어요</div>')+'</div>';
     h+='<div class="dcard"><div class="dc-h">상태 분포</div>'+bar("시작전",st.todo,stMax)+bar("진행 중",st.doing,stMax,"b-doing")+bar("완료",st.done,stMax,"b-done")+bar("Drop",st.drop,stMax,"b-drop")+'</div>';
     h+='<div class="dcard"><div class="dc-h">우선순위 · 진행 중</div>'+bar("높음",pr.high,prMax,"b-high")+bar("중간",pr.mid,prMax)+bar("낮음",pr.low,prMax,"b-low")+'</div>';
@@ -1533,7 +1534,7 @@ function runApp(signal, created) {
     const cells=Math.ceil((sd+dim)/7)*7, weeks=cells/7, gridStart=new Date(y,m,1-sd);
     const visDows=calDays==="weekday"?[1,2,3,4,5]:[0,1,2,3,4,5,6], N=visDows.length;
     const NAMES=["일","월","화","수","목","금","토"];
-    const evs=tasks.filter(t=>t.start&&t.end&&(!calHideDone||!t.done));
+    const evs=tasks.filter(t=>t.start&&t.end&&(!calHideDone||!t.done)&&matchSearch(t));
     let html='<div class="calview">'+calToolbar(true);
     html+='<div class="cv-wd" style="grid-template-columns:repeat('+N+',1fr)">'+visDows.map(dw=>'<span>'+NAMES[dw]+'</span>').join("")+'</div>';
     for(let w=0;w<weeks;w++){
@@ -1560,7 +1561,7 @@ function runApp(signal, created) {
     const todayI=todayISO();
     const colDate=[],colObj=[];for(let c=0;c<N;c++){const dt=new Date(ws);dt.setDate(ws.getDate()+visDows[c]);colDate.push(ymd(dt));colObj.push(dt);}
     $("calTitle").textContent=fmtMD(colDate[0])+" ~ "+fmtMD(colDate[N-1]);
-    const evs=tasks.filter(t=>t.start&&t.end&&(!calHideDone||!t.done));
+    const evs=tasks.filter(t=>t.start&&t.end&&(!calHideDone||!t.done)&&matchSearch(t));
     const wk=weekSegs(colDate,N,evs);const segs=wk.segs;
     const anyCf=segs.some(function(sg){return taskConfirms(sg.t).length>0;});const rowH=anyCf?36:26;
     const cellH=Math.max(220,40+wk.lanes*rowH+8);
@@ -1578,7 +1579,7 @@ function runApp(signal, created) {
     const day=calRef||todayISO(),dt=new Date(day+"T00:00:00"),wd=["일","월","화","수","목","금","토"];
     $("calTitle").textContent=(dt.getMonth()+1)+"월 "+dt.getDate()+"일 ("+wd[dt.getDay()]+")";
     const dayExcluded=isExcludedDay(day);
-    const evs=tasks.filter(t=>t.start&&t.end&&t.start<=day&&day<=t.end&&(!calHideDone||!t.done)&&(t.incHol||!dayExcluded));
+    const evs=tasks.filter(t=>t.start&&t.end&&t.start<=day&&day<=t.end&&(!calHideDone||!t.done)&&(t.incHol||!dayExcluded)&&matchSearch(t));
     const items=evs.map(function(t){let sM=(day===t.start)?toMin(t.startTime):0;let eM=(day===t.end)?toMin(t.endTime):24*60;sM=Math.max(0,sM);eM=Math.min(24*60,eM);if(eM<=sM)eM=sM+30;return {t:t,sM:sM,eM:eM};});
     items.sort((a,b)=>a.sM-b.sM||a.eM-b.eM);
     const lanes=[];items.forEach(function(it){let placed=-1;for(let li=0;li<lanes.length;li++){if(lanes[li].every(x=>it.sM>=x.eM||it.eM<=x.sM)){placed=li;break;}}if(placed<0){placed=lanes.length;lanes.push([]);}lanes[placed].push(it);it.lane=placed;});
