@@ -959,7 +959,7 @@ function runApp(signal, created) {
       const el=$("view").querySelector('[data-id="'+id+'"]');if(!el)return;
       const cls=mode==="edit"?"task-updated":"task-appear";
       el.classList.remove("task-appear","task-updated");void el.offsetWidth;el.classList.add(cls);
-      setTimeout(function(){el.classList.remove(cls);},1300);
+      setTimeout(function(){el.classList.remove(cls);},1800);
     }
     if(!inView){try{target.scrollIntoView({behavior:"smooth",block:"center"});}catch(_){}whenScrollEnds(play);}
     else play();
