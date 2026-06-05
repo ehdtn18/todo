@@ -930,65 +930,26 @@ function runApp(signal, created) {
 
   function clearComposer(){$("tTitle").value="";$("tTitle").classList.remove("err");cEditor.reset();cEditor.clearErr();cRange={start:null,end:null,startTime:"09:00",endTime:"18:00"};paintCRange();cPri.set(null);cPri.clearErr();cIncHol=false;$("incHolSw").classList.remove("on");if(cNotifyTF)cNotifyTF.set("09:00");}
 
-  // 폼/모달이 작은 아이콘으로 '수축'한 뒤 도착 위치로 호를 그리며 '날아가' 항목이 나타나는 모션
-  // - 도착 항목이 뷰포트 밖이면 먼저 스크롤로 보이게 한 뒤 애니메이션
-  // - list 높이/레이아웃을 통제하지 않음(덜컹 없음). 느리고 아주 부드러움.
-  function flyToTaskRect(sr,id){
-    if(!sr||!sr.width)return;
+  // 항목 생성/수정 후 모션 (애플식: 레이아웃을 흔들지 않고 transform+opacity 로만, 부드러운 감속)
+  // - 생성: 살짝 아래에서 떠오르며 페이드 + 부드러운 글로우
+  // - 수정: 제자리에서 가벼운 펄스 + 글로우
+  // - 도착 항목이 화면 밖이면 먼저 스크롤로 보이게 한 뒤 재생
+  function revealTask(id,mode){
     const target=$("view").querySelector('[data-id="'+id+'"]');
     if(!target)return;
-    const r=target.getBoundingClientRect();
-    if(!r.width)return;
+    if(window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches)return;
+    const r=target.getBoundingClientRect();if(!r.width)return;
     const vh=window.innerHeight||document.documentElement.clientHeight;
-    const inView=r.top>=6 && r.bottom<=vh-6;
-    if(!inView){
-      try{target.scrollIntoView({behavior:"smooth",block:"center"});}catch(_){try{target.scrollIntoView();}catch(__){}}
-      setTimeout(function(){runFly(sr,id);},480);
-    }else{
-      runFly(sr,id);
+    const inView=r.top>=6&&r.bottom<=vh-6;
+    function play(){
+      const el=$("view").querySelector('[data-id="'+id+'"]');if(!el)return;
+      const cls=mode==="edit"?"task-updated":"task-appear";
+      el.classList.remove("task-appear","task-updated");void el.offsetWidth;el.classList.add(cls);
+      setTimeout(function(){el.classList.remove(cls);},1300);
     }
+    if(!inView){try{target.scrollIntoView({behavior:"smooth",block:"center"});}catch(_){}setTimeout(play,420);}
+    else play();
   }
-  function runFly(sr,id){
-    const target=$("view").querySelector('[data-id="'+id+'"]');
-    if(!target)return;
-    const e=target.getBoundingClientRect();
-    if(!e.width)return;
-    // 도착 항목: 액센트 테두리 링이 천천히 사라짐(위치/높이 변화 없음 → 덜컹 없음)
-    target.classList.remove("just-landed");void target.offsetWidth;target.classList.add("just-landed");
-    setTimeout(function(){target.classList.remove("just-landed");},1300);
-    const reduce=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if(reduce||typeof target.animate!=="function")return;
-    const SZ=30,half=SZ/2,DUR=880;
-    const sx=sr.left+sr.width/2, sy=sr.top+sr.height/2;          // 폼/모달 중심에서 수축
-    const ex=e.left+Math.min(e.width/2,40), ey=e.top+e.height/2; // 항목 좌측 가까이로 도착
-    const cx=(sx+ex)/2, cy=Math.min(sy,ey)-56;                   // 위로 솟는 제어점(호)
-    const startScale=Math.max(3,Math.min(6,sr.width/SZ*0.4));    // 폼 크기만큼 커졌다가 수축
-    // 도착 항목: 칩이 도착하는 후반부에 부드럽게 나타남(투명도만 → 레이아웃 영향 없음)
-    const absPos=getComputedStyle(target).position==="absolute";
-    target.animate(absPos
-      ?[{opacity:0,offset:0},{opacity:0,offset:.52},{opacity:1,offset:1}]
-      :[{opacity:.001,offset:0},{opacity:.001,offset:.52},{opacity:1,offset:1}],
-      {duration:DUR,easing:"cubic-bezier(.4,0,.2,1)",fill:"backwards"});
-    const chip=document.createElement("div");
-    chip.className="flychip";
-    chip.style.cssText="position:fixed;left:0;top:0;width:"+SZ+"px;height:"+SZ+"px;will-change:transform,opacity;z-index:1000;pointer-events:none";
-    document.body.appendChild(chip);
-    const kf=[],P1=0.28,STEPS=9;
-    const at=function(x,y,sc){return "translate("+(x-half).toFixed(2)+"px,"+(y-half).toFixed(2)+"px) scale("+sc.toFixed(3)+")";};
-    kf.push({transform:at(sx,sy,startScale),opacity:0,offset:0});
-    kf.push({transform:at(sx,sy,startScale*0.86),opacity:0.92,offset:0.06});
-    kf.push({transform:at(sx,sy,1),opacity:1,offset:P1});
-    for(let i=1;i<=STEPS;i++){const tt=i/STEPS,u=1-tt;
-      const x=u*u*sx+2*u*tt*cx+tt*tt*ex, y=u*u*sy+2*u*tt*cy+tt*tt*ey;
-      const sc=1-0.3*tt;
-      const op=tt>0.8?Math.max(0,(1-tt)/0.2):1;
-      kf.push({transform:at(x,y,sc),opacity:op.toFixed(3),offset:Math.min(1,P1+(1-P1)*tt)});
-    }
-    const a=chip.animate(kf,{duration:DUR,easing:"cubic-bezier(.4,0,.2,1)",fill:"forwards"});
-    const done=function(){if(chip.parentNode)chip.remove();};
-    a.onfinish=done;a.oncancel=done;
-  }
-
   function add(){
     if(readOnly){toast("보기 전용이에요",true);return;}
     const miss=[];
@@ -1001,9 +962,8 @@ function runApp(signal, created) {
     if(miss.length){toast(miss.join(", ")+" 입력이 필요해요",true);if(miss[0]==="제목")$("tTitle").focus();return;}
     const newId=uid();
     tasks.push({id:newId,title:title,body:body,start:cRange.start,end:cRange.end,startTime:cRange.startTime,endTime:cRange.endTime,pri:cPri.get(),done:false,incHol:cIncHol,notify:true,notifyTime:cNotifyTF.get(),confirms:[],created:Date.now(),history:[]});
-    const sr=document.querySelector(".composer").getBoundingClientRect();
     requestNotiPerm();clearComposer();$("tTitle").focus();save();render();
-    requestAnimationFrame(function(){flyToTaskRect(sr,newId);});
+    requestAnimationFrame(function(){revealTask(newId,"add");});
   }
   $("addBtn").onclick=add;
   $("tTitle").addEventListener("keydown",function(e){if(e.isComposing||e.keyCode===229)return;if(e.key==="Enter"){e.preventDefault();cEditor.focusStart();}});
@@ -1103,6 +1063,7 @@ function runApp(signal, created) {
 
   /* 릴리즈 내역 */
   const CHANGELOG=[
+    {v:"1.1.22",items:["할 일 생성·수정 애니메이션 전면 개편 — 화면을 가로지르던 칩 모션 제거, 애플식의 부드러운 등장(살짝 떠오르며 페이드+글로우)·수정 강조(가벼운 펄스)로 변경"]},
     {v:"1.1.21",items:["로그인·회원가입·아이디/비밀번호 찾기의 오류 안내를 토스트로 통일"]},
     {v:"1.1.20",items:["초기 데이터 로딩 중 로딩 스피너 표시","비밀번호 찾기를 이메일+성·이름 일치 시에만 표시(보안 강화)","비밀번호 마스킹을 5글자로(맨앞·가운데3·맨뒤)","비밀번호 강도: 조건 충족 개수에 따라 약함→보통→강함(5개 충족 시 강함)","같은 팀 동명이인 가입 차단","입력 예시 문구 정리(example@email.com, 홍/길동)"]},
     {v:"1.1.19",items:["회원가입/로그인 화면 개편 — 라벨과 입력 예시(placeholder) 분리, '로그인 정보'·'사용자 정보'로 묶음","팀 선택을 앱 디자인에 맞춘 드롭다운으로 교체","아이디 찾기(성·이름 → 이메일 일부 표시)·비밀번호 찾기(이메일 → 비밀번호 일부 표시) 추가","비밀번호 정책 강화(10자+, 영문·숫자·특수문자, 아이디·연속·흔한 비번 금지)와 실시간 강도·조건 표시","랜딩의 'CAREID TASKS' 문구 제거"]},
@@ -1237,9 +1198,8 @@ function runApp(signal, created) {
     const anyChanged = contentChanged || t.done!==mDone || (t.notifyTime||"09:00")!==nNotifyTime;
     if(contentChanged){ t.history.push({at:Date.now(),title:t.title,body:t.body,start:t.start,end:t.end,startTime:t.startTime,endTime:t.endTime,pri:t.pri,incHol:t.incHol}); }
     t.title=nv.title;t.body=nv.body;t.start=nv.start;t.end=nv.end;t.startTime=nv.startTime;t.endTime=nv.endTime;t.pri=nv.pri;t.incHol=nv.incHol;t.notify=true;t.notifyTime=nNotifyTime;t.done=mDone;
-    const sr=$("editModal").querySelector(".sheet").getBoundingClientRect();
     save();render();closeEdit();
-    requestAnimationFrame(function(){flyToTaskRect(sr,t.id);});
+    requestAnimationFrame(function(){revealTask(t.id,"edit");});
     toast(anyChanged?"수정 내용을 저장했어요":"변경사항이 없습니다");
   }
   $("emSave").onclick=saveEdit;$("emCancel").onclick=closeEdit;$("emClose").onclick=closeEdit;
