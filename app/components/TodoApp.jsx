@@ -271,7 +271,7 @@ const SHELL_HTML = `
         </div>
         <div class="mp-panel" data-mp="leave" style="display:none">
           <div class="lv-summary" id="lvSummary"></div>
-          <div class="flabel">연차 신청 <span class="flabel-hint">날짜를 누르면 선택 · 다른 날을 한 번 더 누르면 기간</span></div>
+          <div class="flabel">연차 신청 <span class="flabel-hint">시작일과 종료일을 차례로 선택 (하루면 같은 날을 두 번)</span></div>
           <div class="lvcal" id="lvCal"></div>
           <div class="lv-typewrap" id="lvTypeWrap" style="display:none">
             <div class="seg lv-typeseg" id="lvType">
@@ -284,7 +284,8 @@ const SHELL_HTML = `
               <span class="lhr-tf" id="lvStartSel"></span><span class="lhr-sep">~</span><span class="lhr-tf" id="lvEndSel"></span>
             </div>
           </div>
-          <div class="lv-info" id="lvInfo">날짜를 선택하세요</div>
+          <div class="lv-info" id="lvInfo">시작일을 선택해 주세요</div>
+          <button type="button" class="lv-clear" id="lvClear" style="display:none"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>선택 취소</button>
           <button class="btn-primary lv-add" id="lvAddBtn">연차 신청</button>
           <div class="flabel">사용 내역 <span id="lvYear" class="lv-yr"></span></div>
           <div id="lvList" class="trashlist"></div>
@@ -1018,7 +1019,8 @@ function runApp(signal, created) {
   function fmtLeaveDate(iso){const p=iso.split("-");const dt=new Date(iso+"T00:00:00");return (+p[1])+"/"+(+p[2])+" ("+wdNames[dt.getDay()]+")";}
   function paintLeaveBtn(){const rem=LEAVE_HOURS-leaveUsed(leaveYear());const b=$("leaveBtn");if(b)b.title="연차 "+hToDays(rem)+" 남음";}
   // 단일일/기간 판별 — 같은 날(또는 시작만)이면 단일일, 다른 두 날이면 기간(각 평일 1일씩)
-  function lvIsSingle(){return !!(lvRange.start&&(!lvRange.end||lvRange.end===lvRange.start));}
+  function lvComplete(){return !!(lvRange.start&&lvRange.end);}
+  function lvIsSingle(){return !!(lvRange.start&&lvRange.end&&lvRange.end===lvRange.start);}
   function lvIsMulti(){return !!(lvRange.start&&lvRange.end&&lvRange.end!==lvRange.start);}
   function lvHourDur(){const s=toMin(lvStartSel?lvStartSel.get():"09:00"),e=toMin(lvEndSel?lvEndSel.get():"11:00");return Math.max(2,(e-s)/60);}
   function lvSingleHours(){if(lvType==="full")return 8;if(lvType==="am"||lvType==="pm")return 4;return lvHourDur();}
@@ -1033,13 +1035,15 @@ function runApp(signal, created) {
     $("lvCal").innerHTML='<div class="cal-hd"><button type="button" class="cnav" data-lvnav="-1">‹</button><div class="ctitle2">'+y+'년 '+(m+1)+'월</div><button type="button" class="cnav" data-lvnav="1">›</button></div><div class="cal-wd"><span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span></div><div class="cal-grid">'+g+'</div>';
   }
   function paintLvControls(){
-    const single=lvIsSingle(),multi=lvIsMulti();
+    const single=lvIsSingle(),multi=lvIsMulti(),incomplete=!!(lvRange.start&&!lvRange.end);
     $("lvTypeWrap").style.display=single?"block":"none";
     if(multi)lvType="full";
     document.querySelectorAll("#lvType button").forEach(b=>b.classList.toggle("on",b.dataset.t===lvType));
     $("lvHourRange").style.display=(single&&lvType==="hour")?"flex":"none";
+    const clr=$("lvClear");if(clr)clr.style.display=lvRange.start?"flex":"none";
     let info="";
-    if(!lvRange.start)info="날짜를 선택하세요";
+    if(!lvRange.start)info="시작일을 선택해 주세요";
+    else if(incomplete)info="종료일을 선택해 주세요";
     else if(multi){const n=countLeaveDays(lvRange.start,lvRange.end);info=fmtMD(lvRange.start)+" → "+fmtMD(lvRange.end)+" · "+n+"일 사용";}
     else if(lvType==="full")info=fmtLeaveDate(lvRange.start)+" · 하루 종일(8시간)";
     else if(lvType==="am")info=fmtLeaveDate(lvRange.start)+" · 오전 반차(4시간)";
@@ -1055,7 +1059,8 @@ function runApp(signal, created) {
     $("lvList").innerHTML=list.length?list.map(function(l){return '<div class="trashitem" data-id="'+l.id+'"><div class="ti-main"><div class="ti-title">'+esc(fmtLeaveDate(l.date))+'</div><div class="ti-sub">'+leaveLabel(l.hours)+' · '+l.hours+'시간</div></div><div class="ti-acts"><button class="btn-danger ti-btn" data-lvact="del">삭제</button></div></div>';}).join(""):'<div class="empty" style="padding:26px 10px"><p>사용한 연차가 없어요</p></div>';
   }
   function addLeave(){
-    if(!lvRange.start){toast("날짜를 선택하세요",true);return;}
+    if(!lvRange.start){toast("시작일을 선택해 주세요",true);return;}
+    if(!lvRange.end){toast("종료일을 선택해 주세요",true);return;}
     const dates=[];let d=new Date(lvRange.start+"T00:00:00");const end=new Date((lvRange.end||lvRange.start)+"T00:00:00");
     for(;d<=end;d.setDate(d.getDate()+1)){const iso=ymd(d);if(!isExcludedDay(iso))dates.push(iso);}
     if(!dates.length){toast("선택한 기간에 평일이 없어요",true);return;}
@@ -1106,15 +1111,17 @@ function runApp(signal, created) {
     const nav=e.target.closest("[data-lvnav]");if(nav){lvCalM+=(+nav.dataset.lvnav);if(lvCalM<0){lvCalM=11;lvCalY--;}else if(lvCalM>11){lvCalM=0;lvCalY++;}renderLvCal();return;}
     const cd=e.target.closest(".cd[data-d]");if(!cd||cd.classList.contains("empty"))return;
     const iso=cd.dataset.d;
-    if(!lvRange.start||lvIsMulti()){lvRange.start=iso;lvRange.end=null;lvType="full";}
+    if(!lvRange.start||lvComplete()){lvRange.start=iso;lvRange.end=null;lvType="full";}
     else{if(iso<lvRange.start){lvRange.end=lvRange.start;lvRange.start=iso;}else{lvRange.end=iso;}}
     renderLvCal();paintLvControls();
   });
+  $("lvClear").onclick=function(){lvRange={start:null,end:null};lvType="full";renderLvCal();paintLvControls();};
   $("lvAddBtn").onclick=addLeave;
   $("lvList").addEventListener("click",function(e){const b=e.target.closest("[data-lvact]");if(!b)return;const host=b.closest("[data-id]");if(!host)return;const id=host.dataset.id;confirmAsk("이 연차를 삭제할까요?","사용 내역에서 제거됩니다.","삭제",function(){delLeave(id);});});
 
   /* 릴리즈 내역 */
   const CHANGELOG=[
+    {v:"1.1.25",items:["연차: 항상 두 번 클릭(시작일→종료일, 하루면 같은 날 두 번)으로 선택하도록 통일 + 한 번만 누르면 '종료일을 선택해 주세요' 안내","연차 달력에 '선택 취소' 버튼 추가"]},
     {v:"1.1.24",items:["연차 신청 개편 — 모달에 달력을 바로 표시(버튼 팝업 제거)","유형 자동화: 같은 날 선택 시에만 하루종일·오전반차·오후반차·시간차 선택, 서로 다른 두 날은 그 기간만큼 일수 차감","시간차는 시작·종료 시간을 2시간 단위로 선택","계정 탭은 '비밀번호 변경하기'를 눌러야 변경 폼이 열리도록 변경"]},
     {v:"1.1.23",items:["새 항목 생성 시, 화면 밖이면 스크롤이 끝난 뒤에 등장 애니메이션을 재생하도록 개선(고정 지연 → 스크롤 종료 감지)"]},
     {v:"1.1.22",items:["할 일 생성·수정 애니메이션 전면 개편 — 화면을 가로지르던 칩 모션 제거, 애플식의 부드러운 등장(살짝 떠오르며 페이드+글로우)·수정 강조(가벼운 펄스)로 변경"]},
