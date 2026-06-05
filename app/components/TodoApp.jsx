@@ -719,7 +719,7 @@ function runApp(signal, created) {
     trig.addEventListener("click",function(e){e.preventDefault();e.stopPropagation();if(isOpen())close();else open();});
     pop.addEventListener("click",function(e){const o=e.target.closest(".csel-opt");if(!o)return;val=o.dataset.v;paint();close();if(onChange)onChange(val);});
     document.addEventListener("mousedown",function(e){if(isOpen()&&!pop.contains(e.target)&&!trig.contains(e.target))close();},{signal});
-    window.addEventListener("scroll",function(e){if(isOpen()&&!pop.contains(e.target))position();},{signal:signal,capture:true});
+    window.addEventListener("scroll",function(e){if(!isOpen()||pop.contains(e.target))return;const r=trig.getBoundingClientRect();const hdr=document.querySelector("header");const hb=hdr?hdr.getBoundingClientRect().bottom:0;if(r.bottom<=hb+2||r.top>=window.innerHeight-2){close();return;}position();},{signal:signal,capture:true});
     window.addEventListener("resize",function(){if(isOpen())position();},{signal});
     paint();
     return {get:function(){return val;},set:function(v){val=v;paint();if(isOpen())renderPop();},close:close};
@@ -989,6 +989,7 @@ function runApp(signal, created) {
 
   /* 릴리즈 내역 */
   const CHANGELOG=[
+    {v:"1.1.18",items:["시간 선택 드롭다운이 스크롤 시 상단 고정 헤더 위로 겹쳐 보이던 문제 수정 — 트리거가 헤더 뒤로 가려지면 자동으로 닫힘"]},
     {v:"1.1.17",items:["시간 선택 드롭다운(마감일 알림 등)이 스크롤하면 닫히던 버그 수정 — 트리거를 따라가도록 변경"]},
     {v:"1.1.16",items:["팀 보기 드롭다운에서 '· 전체' 문구 제거(인원수만 표시)","드롭다운이 스크롤 시 트리거 버튼을 따라가도록 위치 보정"]},
     {v:"1.1.15",items:["검색어와 일치하는 글자에 연한 파란 하이라이트 표시","검색창에 입력이 있으면 X 버튼으로 즉시 지우기"]},
