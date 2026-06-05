@@ -173,7 +173,6 @@ const SHELL_HTML = `
       <div class="auth-links"><button type="button" class="auth-link" data-go="login">로그인으로 돌아가기</button></div>
     </form>
 
-    <div class="auth-err" id="authErr"></div>
   </div>
 </div>
 <div class="sortpop teampop" id="rgTeamPop"></div>
@@ -421,7 +420,7 @@ function runApp(signal, created) {
     syncViewSeg();syncLayoutSeg();syncCalModeSeg();syncLayoutToggles();updateViewAs();applyReadOnly();
     render();checkNoti();
   }
-  function authErr(m){$("authErr").textContent=m||"";}
+  function authErr(m){if(m)toast(m,true);}
   const AUTH_TEAMS=["기획팀","경영지원팀","개발팀","디자인팀","MD팀"];
 
   // ----- 화면 전환(로그인/회원가입/아이디찾기/비번찾기) -----
@@ -490,10 +489,10 @@ function runApp(signal, created) {
   $("authRegister").addEventListener("submit",async function(e){e.preventDefault();authErr("");const email=$("rgEmail").value.trim(),password=$("rgPw").value,pw2=$("rgPw2").value,lastName=$("rgLast").value.trim(),firstName=$("rgFirst").value.trim(),team=rgTeamVal;if(!email||!password||!lastName||!firstName||!team){authErr("모든 항목을 입력하세요");return;}if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){authErr("이메일 형식이 올바르지 않아요");return;}if(!pwAllOk(password,email)){authErr("비밀번호가 보안 조건을 충족하지 않아요");return;}if(password!==pw2){authErr("비밀번호가 일치하지 않아요");return;}$("rgBtn").disabled=true;try{const r=await fetch("/api/auth/register",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email:email,password:password,lastName:lastName,firstName:firstName,team:team})});const j=await r.json();if(!r.ok){authErr(j.error||"회원가입 실패");return;}await boot();}catch(err){authErr("네트워크 오류");}finally{$("rgBtn").disabled=false;}});
 
   // ----- 아이디 찾기 -----
-  $("authFindId").addEventListener("submit",async function(e){e.preventDefault();authErr("");const lastName=$("fiLast").value.trim(),firstName=$("fiFirst").value.trim();const res=$("fiResult");res.innerHTML="";if(!lastName||!firstName){res.innerHTML='<div class="auth-result-err">성과 이름을 모두 입력하세요</div>';return;}$("fiBtn").disabled=true;try{const r=await fetch("/api/auth/find-id",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({lastName:lastName,firstName:firstName})});const j=await r.json();if(!r.ok||!j.emails||!j.emails.length){res.innerHTML='<div class="auth-result-err">일치하는 계정이 없어요</div>';return;}res.innerHTML='<div class="auth-result-ok"><div class="arr-lbl">가입된 아이디</div>'+j.emails.map(em=>'<div class="arr-val">'+esc(em)+'</div>').join("")+'</div>';}catch(err){res.innerHTML='<div class="auth-result-err">네트워크 오류</div>';}finally{$("fiBtn").disabled=false;}});
+  $("authFindId").addEventListener("submit",async function(e){e.preventDefault();const lastName=$("fiLast").value.trim(),firstName=$("fiFirst").value.trim();const res=$("fiResult");res.innerHTML="";if(!lastName||!firstName){toast("성과 이름을 모두 입력하세요",true);return;}$("fiBtn").disabled=true;try{const r=await fetch("/api/auth/find-id",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({lastName:lastName,firstName:firstName})});const j=await r.json();if(!r.ok||!j.emails||!j.emails.length){toast("일치하는 계정이 없어요",true);return;}res.innerHTML='<div class="auth-result-ok"><div class="arr-lbl">가입된 아이디</div>'+j.emails.map(em=>'<div class="arr-val">'+esc(em)+'</div>').join("")+'</div>';}catch(err){toast("네트워크 오류",true);}finally{$("fiBtn").disabled=false;}});
 
   // ----- 비밀번호 찾기 -----
-  $("authFindPw").addEventListener("submit",async function(e){e.preventDefault();authErr("");const email=$("fpEmail").value.trim(),lastName=$("fpLast").value.trim(),firstName=$("fpFirst").value.trim();const res=$("fpResult");res.innerHTML="";if(!email||!lastName||!firstName){res.innerHTML='<div class="auth-result-err">이메일과 성·이름을 모두 입력하세요</div>';return;}$("fpBtn").disabled=true;try{const r=await fetch("/api/auth/find-pw",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email:email,lastName:lastName,firstName:firstName})});const j=await r.json();if(!r.ok){res.innerHTML='<div class="auth-result-err">'+esc(j.error||"찾을 수 없어요")+'</div>';return;}res.innerHTML='<div class="auth-result-ok"><div class="arr-lbl">비밀번호 (일부 가림)</div><div class="arr-val">'+esc(j.masked)+'</div></div>';}catch(err){res.innerHTML='<div class="auth-result-err">네트워크 오류</div>';}finally{$("fpBtn").disabled=false;}});
+  $("authFindPw").addEventListener("submit",async function(e){e.preventDefault();const email=$("fpEmail").value.trim(),lastName=$("fpLast").value.trim(),firstName=$("fpFirst").value.trim();const res=$("fpResult");res.innerHTML="";if(!email||!lastName||!firstName){toast("이메일과 성·이름을 모두 입력하세요",true);return;}$("fpBtn").disabled=true;try{const r=await fetch("/api/auth/find-pw",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email:email,lastName:lastName,firstName:firstName})});const j=await r.json();if(!r.ok){toast(j.error||"찾을 수 없어요",true);return;}res.innerHTML='<div class="auth-result-ok"><div class="arr-lbl">비밀번호 (일부 가림)</div><div class="arr-val">'+esc(j.masked)+'</div></div>';}catch(err){toast("네트워크 오류",true);}finally{$("fpBtn").disabled=false;}});
 
   // ===== 보기 대상(팀/팀원) 필터 — 보기 전용 =====
   function viewLabel(){if(viewTarget.type==="user")return viewTarget.name;if(viewTarget.type==="team")return viewTarget.team;return "내 할일";}
@@ -1104,6 +1103,7 @@ function runApp(signal, created) {
 
   /* 릴리즈 내역 */
   const CHANGELOG=[
+    {v:"1.1.21",items:["로그인·회원가입·아이디/비밀번호 찾기의 오류 안내를 토스트로 통일"]},
     {v:"1.1.20",items:["초기 데이터 로딩 중 로딩 스피너 표시","비밀번호 찾기를 이메일+성·이름 일치 시에만 표시(보안 강화)","비밀번호 마스킹을 5글자로(맨앞·가운데3·맨뒤)","비밀번호 강도: 조건 충족 개수에 따라 약함→보통→강함(5개 충족 시 강함)","같은 팀 동명이인 가입 차단","입력 예시 문구 정리(example@email.com, 홍/길동)"]},
     {v:"1.1.19",items:["회원가입/로그인 화면 개편 — 라벨과 입력 예시(placeholder) 분리, '로그인 정보'·'사용자 정보'로 묶음","팀 선택을 앱 디자인에 맞춘 드롭다운으로 교체","아이디 찾기(성·이름 → 이메일 일부 표시)·비밀번호 찾기(이메일 → 비밀번호 일부 표시) 추가","비밀번호 정책 강화(10자+, 영문·숫자·특수문자, 아이디·연속·흔한 비번 금지)와 실시간 강도·조건 표시","랜딩의 'CAREID TASKS' 문구 제거"]},
     {v:"1.1.18",items:["시간 선택 드롭다운이 스크롤 시 상단 고정 헤더 위로 겹쳐 보이던 문제 수정 — 트리거가 헤더 뒤로 가려지면 자동으로 닫힘"]},
