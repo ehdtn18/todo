@@ -25,6 +25,9 @@ export async function POST(req) {
     const pool = getPool();
     const [ex] = await pool.query("SELECT id FROM users WHERE email=?", [email]);
     if (ex.length) return NextResponse.json({ error: "이미 가입된 이메일이에요" }, { status: 409 });
+    // 같은 팀에 같은 이름(동명이인·동명팀원)이 이미 있으면 막는다(이메일/비번이 달라도).
+    const [dupName] = await pool.query("SELECT id FROM users WHERE name=? AND team=?", [name, team]);
+    if (dupName.length) return NextResponse.json({ error: "같은 팀에 같은 이름으로 이미 가입돼 있어요" }, { status: 409 });
 
     const id = uid();
     const hash = await hashPw(password);

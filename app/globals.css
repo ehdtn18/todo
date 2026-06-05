@@ -826,6 +826,10 @@ header{animation:fadeUp .28s var(--ease)}
 .slash{width:268px}
 
 /* ===== 인증 화면 ===== */
+.loadscreen{background:var(--bg);align-items:center;justify-content:center;flex-direction:column;gap:14px}
+.loadspin{width:40px;height:40px;border:3px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
+.loadtxt{font-size:13px;color:var(--soft);font-weight:500}
+@keyframes spin{to{transform:rotate(360deg)}}
 .authscreen{background:var(--bg);align-items:center;overflow:auto}
 .authcard{background:var(--paper);border:1px solid var(--line);border-radius:20px;padding:30px 26px;width:100%;max-width:380px;box-shadow:0 24px 60px -24px rgba(0,0,0,.2);animation:fadeUp .3s var(--ease)}
 .auth-brand{text-align:center;margin-bottom:20px}

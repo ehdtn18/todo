@@ -115,13 +115,14 @@ const SHELL_HTML = `
   </footer>
 </div>
 
-<div class="overlay authscreen open" id="authScreen">
+<div class="overlay loadscreen open" id="loadScreen"><div class="loadspin"></div><div class="loadtxt">불러오는 중…</div></div>
+<div class="overlay authscreen" id="authScreen">
   <div class="authcard">
     <div class="auth-brand"><h2>오늘의 할 일</h2><p class="auth-sub">로그인하고 할 일을 관리하세요</p></div>
     <div class="seg auth-tabs" id="authTabs"><button class="on" data-at="login">로그인</button><button data-at="register">회원가입</button></div>
 
     <form id="authLogin" class="auth-form" autocomplete="on">
-      <div class="auth-field"><label class="auth-lbl" for="liEmail">이메일</label><input type="email" id="liEmail" class="auth-in" placeholder="you@careid.center" autocomplete="username"></div>
+      <div class="auth-field"><label class="auth-lbl" for="liEmail">이메일</label><input type="email" id="liEmail" class="auth-in" placeholder="example@email.com" autocomplete="username"></div>
       <div class="auth-field"><label class="auth-lbl" for="liPw">비밀번호</label><input type="password" id="liPw" class="auth-in" placeholder="비밀번호를 입력하세요" autocomplete="current-password"></div>
       <button type="submit" class="btn-primary auth-submit" id="liBtn">로그인</button>
       <div class="auth-links"><button type="button" class="auth-link" data-go="findId">아이디 찾기</button><span class="auth-dot">·</span><button type="button" class="auth-link" data-go="findPw">비밀번호 찾기</button></div>
@@ -129,7 +130,7 @@ const SHELL_HTML = `
 
     <form id="authRegister" class="auth-form" style="display:none" autocomplete="on">
       <div class="auth-sec">로그인 정보</div>
-      <div class="auth-field"><label class="auth-lbl" for="rgEmail">이메일<span class="auth-req">*</span></label><input type="email" id="rgEmail" class="auth-in" placeholder="you@careid.center" autocomplete="username"></div>
+      <div class="auth-field"><label class="auth-lbl" for="rgEmail">이메일<span class="auth-req">*</span></label><input type="email" id="rgEmail" class="auth-in" placeholder="example@email.com" autocomplete="username"></div>
       <div class="auth-field"><label class="auth-lbl" for="rgPw">비밀번호<span class="auth-req">*</span></label>
         <input type="password" id="rgPw" class="auth-in" placeholder="영문·숫자·특수문자 포함 10자 이상" autocomplete="new-password">
         <div class="pwmeter" id="pwMeter" style="display:none"><div class="pwbar"><span id="pwBarFill"></span></div><span class="pwlvl" id="pwLvl"></span></div>
@@ -138,8 +139,8 @@ const SHELL_HTML = `
       <div class="auth-field"><label class="auth-lbl" for="rgPw2">비밀번호 확인<span class="auth-req">*</span></label><input type="password" id="rgPw2" class="auth-in" placeholder="비밀번호를 다시 입력하세요" autocomplete="new-password"><div class="pwmatch" id="pwMatch"></div></div>
       <div class="auth-sec">사용자 정보</div>
       <div class="auth-row">
-        <div class="auth-field"><label class="auth-lbl" for="rgLast">성<span class="auth-req">*</span></label><input type="text" id="rgLast" class="auth-in" placeholder="예: 김" autocomplete="family-name"></div>
-        <div class="auth-field"><label class="auth-lbl" for="rgFirst">이름<span class="auth-req">*</span></label><input type="text" id="rgFirst" class="auth-in" placeholder="예: 가나" autocomplete="given-name"></div>
+        <div class="auth-field"><label class="auth-lbl" for="rgLast">성<span class="auth-req">*</span></label><input type="text" id="rgLast" class="auth-in" placeholder="예: 홍" autocomplete="family-name"></div>
+        <div class="auth-field"><label class="auth-lbl" for="rgFirst">이름<span class="auth-req">*</span></label><input type="text" id="rgFirst" class="auth-in" placeholder="예: 길동" autocomplete="given-name"></div>
       </div>
       <div class="auth-field"><label class="auth-lbl">팀<span class="auth-req">*</span></label>
         <button type="button" class="auth-in csel-trig" id="rgTeamTrig"><span class="csel-ph" id="rgTeamLbl">팀 선택</span><svg class="csel-car" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg></button>
@@ -151,8 +152,8 @@ const SHELL_HTML = `
       <div class="auth-sec">아이디(이메일) 찾기</div>
       <p class="auth-hint">가입할 때 입력한 성과 이름을 넣어주세요.</p>
       <div class="auth-row">
-        <div class="auth-field"><label class="auth-lbl" for="fiLast">성</label><input type="text" id="fiLast" class="auth-in" placeholder="예: 김"></div>
-        <div class="auth-field"><label class="auth-lbl" for="fiFirst">이름</label><input type="text" id="fiFirst" class="auth-in" placeholder="예: 가나"></div>
+        <div class="auth-field"><label class="auth-lbl" for="fiLast">성</label><input type="text" id="fiLast" class="auth-in" placeholder="예: 홍"></div>
+        <div class="auth-field"><label class="auth-lbl" for="fiFirst">이름</label><input type="text" id="fiFirst" class="auth-in" placeholder="예: 길동"></div>
       </div>
       <button type="submit" class="btn-primary auth-submit" id="fiBtn">아이디 찾기</button>
       <div class="auth-result" id="fiResult"></div>
@@ -161,8 +162,12 @@ const SHELL_HTML = `
 
     <form id="authFindPw" class="auth-form" style="display:none" autocomplete="off">
       <div class="auth-sec">비밀번호 찾기</div>
-      <p class="auth-hint">가입한 이메일(아이디)을 넣으면 일부를 가린 비밀번호를 보여드려요.</p>
-      <div class="auth-field"><label class="auth-lbl" for="fpEmail">이메일(아이디)</label><input type="email" id="fpEmail" class="auth-in" placeholder="you@careid.center"></div>
+      <p class="auth-hint">가입한 이메일과 성·이름이 모두 맞으면 일부를 가린 비밀번호를 보여드려요.</p>
+      <div class="auth-field"><label class="auth-lbl" for="fpEmail">이메일(아이디)</label><input type="email" id="fpEmail" class="auth-in" placeholder="example@email.com"></div>
+      <div class="auth-row">
+        <div class="auth-field"><label class="auth-lbl" for="fpLast">성</label><input type="text" id="fpLast" class="auth-in" placeholder="예: 홍"></div>
+        <div class="auth-field"><label class="auth-lbl" for="fpFirst">이름</label><input type="text" id="fpFirst" class="auth-in" placeholder="예: 길동"></div>
+      </div>
       <button type="submit" class="btn-primary auth-submit" id="fpBtn">비밀번호 찾기</button>
       <div class="auth-result" id="fpResult"></div>
       <div class="auth-links"><button type="button" class="auth-link" data-go="login">로그인으로 돌아가기</button></div>
@@ -393,15 +398,19 @@ function runApp(signal, created) {
     if(["rows","cards"].indexOf(s.listLayout)>=0)listLayout=s.listLayout;
     if(["list","kanban","calendar","dash"].indexOf(s.viewMode)>=0)viewMode=s.viewMode;
   }
-  function showAuth(){$("authScreen").classList.add("open");}
+  function showLoad(){$("loadScreen").classList.add("open");}
+  function hideLoad(){$("loadScreen").classList.remove("open");}
+  function showAuth(){hideLoad();$("authScreen").classList.add("open");}
   function hideAuth(){$("authScreen").classList.remove("open");}
   function dispName(u){return u?(u.firstName||u.name||""):"";}
   const USER_ICON='<svg class="uc-ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.4"/><path d="M5 20v-1a5 5 0 015-5h4a5 5 0 015 5v1"/></svg>';
   function paintUser(){const c=$("userChip");if(currentUser){c.innerHTML=USER_ICON+'<span>'+esc(dispName(currentUser))+' · '+esc(currentUser.team)+'</span>';c.style.display="inline-flex";}else{c.style.display="none";}}
   async function boot(){
+    showLoad();
     let data=null;
     try{const r=await fetch("/api/bootstrap",{cache:"no-store"});if(r.ok)data=await r.json();}catch(e){}
     if(!data||!data.user){currentUser=null;paintUser();showAuth();return;}
+    hideLoad();
     currentUser=data.user; allUsers=Array.isArray(data.users)?data.users:[];
     tasks=(data.tasks||[]).map(normTask); mineTasks=tasks;
     trash=(data.trash||[]).map(x=>Object.assign(normTask(x),{deletedAt:x.deletedAt||0}));
@@ -458,7 +467,7 @@ function runApp(signal, created) {
     ];
   }
   function pwAllOk(pw,email){return !!pw&&pwConds(pw,email).every(c=>c.ok);}
-  function pwStrength(pw,email){if(!pw)return{lvl:0,t:""};if(!pwAllOk(pw,email))return{lvl:1,t:"약함"};return pw.length>=14?{lvl:3,t:"강함"}:{lvl:2,t:"보통"};}
+  function pwStrength(pw,email){if(!pw)return{lvl:0,t:""};const met=pwConds(pw,email).filter(c=>c.ok).length;if(met<=2)return{lvl:1,t:"약함"};if(met<=4)return{lvl:2,t:"보통"};return{lvl:3,t:"강함"};}
   function renderPwUI(){
     const pw=$("rgPw").value,email=$("rgEmail").value.trim();
     const meter=$("pwMeter"),chk=$("pwChk");
@@ -484,7 +493,7 @@ function runApp(signal, created) {
   $("authFindId").addEventListener("submit",async function(e){e.preventDefault();authErr("");const lastName=$("fiLast").value.trim(),firstName=$("fiFirst").value.trim();const res=$("fiResult");res.innerHTML="";if(!lastName||!firstName){res.innerHTML='<div class="auth-result-err">성과 이름을 모두 입력하세요</div>';return;}$("fiBtn").disabled=true;try{const r=await fetch("/api/auth/find-id",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({lastName:lastName,firstName:firstName})});const j=await r.json();if(!r.ok||!j.emails||!j.emails.length){res.innerHTML='<div class="auth-result-err">일치하는 계정이 없어요</div>';return;}res.innerHTML='<div class="auth-result-ok"><div class="arr-lbl">가입된 아이디</div>'+j.emails.map(em=>'<div class="arr-val">'+esc(em)+'</div>').join("")+'</div>';}catch(err){res.innerHTML='<div class="auth-result-err">네트워크 오류</div>';}finally{$("fiBtn").disabled=false;}});
 
   // ----- 비밀번호 찾기 -----
-  $("authFindPw").addEventListener("submit",async function(e){e.preventDefault();authErr("");const email=$("fpEmail").value.trim();const res=$("fpResult");res.innerHTML="";if(!email){res.innerHTML='<div class="auth-result-err">이메일을 입력하세요</div>';return;}$("fpBtn").disabled=true;try{const r=await fetch("/api/auth/find-pw",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email:email})});const j=await r.json();if(!r.ok){res.innerHTML='<div class="auth-result-err">'+esc(j.error||"찾을 수 없어요")+'</div>';return;}res.innerHTML='<div class="auth-result-ok"><div class="arr-lbl">비밀번호 (일부 가림)</div><div class="arr-val">'+esc(j.masked)+'</div></div>';}catch(err){res.innerHTML='<div class="auth-result-err">네트워크 오류</div>';}finally{$("fpBtn").disabled=false;}});
+  $("authFindPw").addEventListener("submit",async function(e){e.preventDefault();authErr("");const email=$("fpEmail").value.trim(),lastName=$("fpLast").value.trim(),firstName=$("fpFirst").value.trim();const res=$("fpResult");res.innerHTML="";if(!email||!lastName||!firstName){res.innerHTML='<div class="auth-result-err">이메일과 성·이름을 모두 입력하세요</div>';return;}$("fpBtn").disabled=true;try{const r=await fetch("/api/auth/find-pw",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email:email,lastName:lastName,firstName:firstName})});const j=await r.json();if(!r.ok){res.innerHTML='<div class="auth-result-err">'+esc(j.error||"찾을 수 없어요")+'</div>';return;}res.innerHTML='<div class="auth-result-ok"><div class="arr-lbl">비밀번호 (일부 가림)</div><div class="arr-val">'+esc(j.masked)+'</div></div>';}catch(err){res.innerHTML='<div class="auth-result-err">네트워크 오류</div>';}finally{$("fpBtn").disabled=false;}});
 
   // ===== 보기 대상(팀/팀원) 필터 — 보기 전용 =====
   function viewLabel(){if(viewTarget.type==="user")return viewTarget.name;if(viewTarget.type==="team")return viewTarget.team;return "내 할일";}
@@ -1095,6 +1104,7 @@ function runApp(signal, created) {
 
   /* 릴리즈 내역 */
   const CHANGELOG=[
+    {v:"1.1.20",items:["초기 데이터 로딩 중 로딩 스피너 표시","비밀번호 찾기를 이메일+성·이름 일치 시에만 표시(보안 강화)","비밀번호 마스킹을 5글자로(맨앞·가운데3·맨뒤)","비밀번호 강도: 조건 충족 개수에 따라 약함→보통→강함(5개 충족 시 강함)","같은 팀 동명이인 가입 차단","입력 예시 문구 정리(example@email.com, 홍/길동)"]},
     {v:"1.1.19",items:["회원가입/로그인 화면 개편 — 라벨과 입력 예시(placeholder) 분리, '로그인 정보'·'사용자 정보'로 묶음","팀 선택을 앱 디자인에 맞춘 드롭다운으로 교체","아이디 찾기(성·이름 → 이메일 일부 표시)·비밀번호 찾기(이메일 → 비밀번호 일부 표시) 추가","비밀번호 정책 강화(10자+, 영문·숫자·특수문자, 아이디·연속·흔한 비번 금지)와 실시간 강도·조건 표시","랜딩의 'CAREID TASKS' 문구 제거"]},
     {v:"1.1.18",items:["시간 선택 드롭다운이 스크롤 시 상단 고정 헤더 위로 겹쳐 보이던 문제 수정 — 트리거가 헤더 뒤로 가려지면 자동으로 닫힘"]},
     {v:"1.1.17",items:["시간 선택 드롭다운(마감일 알림 등)이 스크롤하면 닫히던 버그 수정 — 트리거를 따라가도록 변경"]},
