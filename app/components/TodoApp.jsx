@@ -606,9 +606,12 @@ function runApp(signal, created) {
     return null;
   }
   function listToHtml(items){
-    function openTag(t){return t==="ol"?"<ol>":t==="todo"?'<ul class="mdtodo">':"<ul>";}
-    function closeTag(t){return t==="ol"?"</ol>":"</ul>";}
-    function liOpen(it){if(it.type==="todo")return '<li class="'+(it.checked?"ck":"")+'"><span class="tbx">'+(it.checked?"✓":"")+'</span><span>'+inlineMd(it.text)+'</span>';return "<li>"+inlineMd(it.text);}
+    function openTag(t){return t==="ol"?'<ul class="mdol">':t==="todo"?'<ul class="mdtodo">':"<ul>";}
+    function closeTag(t){return "</ul>";}
+    function liOpen(it){if(it.type==="todo")return '<li class="'+(it.checked?"ck":"")+'"><span class="tbx">'+(it.checked?"✓":"")+'</span><span>'+inlineMd(it.text)+'</span>';if(it.type==="ol")return '<li class="olli"><span class="olrow"><span class="oln">'+esc(it._num||"")+'</span><span>'+inlineMd(it.text)+'</span></span>';return "<li>"+inlineMd(it.text);}
+    // ol 계층 번호(에디터 renumber와 동일: 1, 1-1, 1-1-1 / 최상위만 ".")
+    const counters=[];
+    for(let q=0;q<items.length;q++){const it=items[q],lv=it.indent;if(it.type==="ol"){counters[lv]=(counters[lv]||0)+1;for(let k=lv+1;k<counters.length;k++)counters[k]=0;const parts=[];for(let k=0;k<=lv;k++)parts.push(counters[k]||1);it._num=parts.join("-")+(lv===0?".":"");}else{for(let k=lv;k<counters.length;k++)counters[k]=0;}}
     let html="";const stack=[];
     for(let idx=0;idx<items.length;idx++){const it=items[idx];const lvl=it.indent;
       if(lvl+1>stack.length){ while(stack.length<lvl+1){html+=openTag(it.type);stack.push(it.type);} }
@@ -664,8 +667,16 @@ function runApp(signal, created) {
   function EditorFactory(editorEl,menuEl,anchorEl){
     let menuOpen=false,slashQuery="",menuItems=[],activeIndex=0,composing=false;
     function newBlk(type){const b=document.createElement("div");b.className="blk";b.dataset.type=type||"p";if(type==="todo"||type==="confirm")b.dataset.checked="false";if(type==="confirm")b.classList.add("ph");if(type==="toggle")b.dataset.open="true";b.innerHTML="<br>";return b;}
-    function reset(){editorEl.innerHTML="";editorEl.appendChild(newBlk("p"));updateEmpty();}
+    function reset(){editorEl.innerHTML="";editorEl.appendChild(newBlk("p"));updateEmpty();histReset();}
     function updateEmpty(){const blks=editorEl.querySelectorAll(".blk");const only=blks.length===1?blks[0]:null;const plainOnly=!only||!only.dataset.type||only.dataset.type==="p";const empty=blks.length<=1&&editorEl.textContent.trim()===""&&!editorEl.querySelector(".divider,.media,.tableblock,.codeblock")&&plainOnly;editorEl.dataset.empty=empty?"true":"false";}
+    // ── 실행 취소/다시 실행: 메모리 내 스냅샷, 최대 50단계(현재 포함 51) ──
+    let hist=[], hp=-1, histTimer=null;
+    function histReset(){hist=[editorEl.innerHTML];hp=0;if(histTimer){clearTimeout(histTimer);histTimer=null;}}
+    function histRecord(){const h=editorEl.innerHTML;if(hp>=0&&h===hist[hp])return;hist=hist.slice(0,hp+1);hist.push(h);while(hist.length>51)hist.shift();hp=hist.length-1;}
+    function histRecordDebounced(){if(histTimer)clearTimeout(histTimer);histTimer=setTimeout(function(){histTimer=null;histRecord();},350);}
+    function histRestore(h){editorEl.innerHTML=h;renumber();updateEmpty();const bs=editorEl.querySelectorAll(".blk");if(bs.length)placeCaret(bs[bs.length-1],false);}
+    function histUndo(){if(histTimer){clearTimeout(histTimer);histTimer=null;}histRecord();if(hp>0){hp--;histRestore(hist[hp]);}}
+    function histRedo(){if(hp<hist.length-1){hp++;histRestore(hist[hp]);}}
     function renumber(){const counters=[];let cf=0;editorEl.querySelectorAll(".blk").forEach(function(b){const lv=parseInt(b.dataset.indent||"0",10);if(b.dataset.type==="confirm"){cf++;b.setAttribute("data-num",cf);}if(b.dataset.type==="ol"){counters[lv]=(counters[lv]||0)+1;for(let k=lv+1;k<counters.length;k++)counters[k]=0;const parts=[];for(let k=0;k<=lv;k++)parts.push(counters[k]||1);b.setAttribute("data-num",parts.join("-")+(lv===0?".":""));}else{for(let k=lv;k<counters.length;k++)counters[k]=0;}});}
     function setIndent(blk,n){n=Math.max(0,Math.min(4,n));if(n<=0){blk.removeAttribute("data-indent");blk.style.marginLeft="";}else{blk.dataset.indent=String(n);blk.style.marginLeft=(n*22)+"px";}}
     function currentBlock(){const s=window.getSelection();if(!s.rangeCount)return null;let n=s.anchorNode;while(n&&n!==editorEl){if(n.nodeType===1&&n.classList&&n.classList.contains("blk"))return n;n=n.parentNode;}return null;}
@@ -729,10 +740,12 @@ function runApp(signal, created) {
     editorEl.addEventListener("keydown",function(e){
       if(composing||e.isComposing||e.keyCode===229)return;
       if(menuOpen){if(e.key==="ArrowDown"){e.preventDefault();moveActive(1);return;}if(e.key==="ArrowUp"){e.preventDefault();moveActive(-1);return;}if(e.key==="Enter"||e.key==="Tab"){e.preventDefault();chooseActive();return;}if(e.key==="Escape"){e.preventDefault();hideMenu();return;}}
+      if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==="z"){e.preventDefault();if(e.shiftKey)histRedo();else histUndo();return;}
+      if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==="y"){e.preventDefault();histRedo();return;}
       if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==="b"){e.preventDefault();document.execCommand("bold");return;}
       if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==="x"){const sel=window.getSelection();if(sel&&!sel.isCollapsed){e.preventDefault();document.execCommand("strikeThrough");return;}}
       if(e.key==="Tab"){const cur=currentBlock();if(cur&&(cur.dataset.type==="ul"||cur.dataset.type==="ol"||cur.dataset.type==="todo")){e.preventDefault();const ind=parseInt(cur.dataset.indent||"0",10);setIndent(cur,e.shiftKey?ind-1:ind+1);renumber();return;}}
-      if(e.key==="Backspace"){const sel=window.getSelection();if(sel&&!sel.isCollapsed)return;const cur=currentBlock();if(cur&&cur.dataset.type==="confirm"){const _t=(cur.textContent||"").replace(/ /g," ").trim();if(/^\d{2,4}\.\d{1,2}\.\d{1,2}\(.\)$/.test(_t)){e.preventDefault();cur.innerHTML="<br>";cur.classList.add("ph");renumber();updateEmpty();placeCaret(cur,true);return;}}if(cur&&!cur.classList.contains("codeblock")&&!cur.classList.contains("tableblock")&&caretAtStart(cur)){const ind0=parseInt(cur.dataset.indent||"0",10);if(ind0>0&&(cur.dataset.type==="ul"||cur.dataset.type==="ol"||cur.dataset.type==="todo")){e.preventDefault();setIndent(cur,ind0-1);renumber();return;}if(cur.dataset.type&&cur.dataset.type!=="p"){e.preventDefault();cur.dataset.type="p";cur.removeAttribute("data-checked");cur.removeAttribute("data-open");setIndent(cur,0);renumber();updateEmpty();return;}const prev=cur.previousElementSibling;if(prev){e.preventDefault();if(prev.classList.contains("divider")||prev.getAttribute("contenteditable")==="false"){prev.remove();updateEmpty();return;}placeCaret(prev,false);while(cur.firstChild){const f=cur.firstChild;if(f.nodeName==="BR"&&cur.childNodes.length===1){cur.removeChild(f);break;}prev.appendChild(f);}cur.remove();renumber();updateEmpty();}}}
+      if(e.key==="Backspace"){const sel=window.getSelection();if(sel&&!sel.isCollapsed)return;const cur=currentBlock();if(cur&&cur.dataset.type==="confirm"){const _t=(cur.textContent||"").replace(/ /g," ").trim();const _txt=(cur.textContent||"").replace(/ /g," ");const _dm=_txt.match(/^(\d{2,4}\.\d{1,2}\.\d{1,2}\(.\))/);if(_dm){const _dl=_dm[1].length;const _cl=textBeforeCaret(cur).replace(/ /g," ").length;if(_cl>=1&&_cl<=_dl){e.preventDefault();const _memo=_txt.slice(_dl);if(_memo.trim()===""){cur.innerHTML="<br>";cur.classList.add("ph");}else{cur.textContent=_memo;cur.classList.remove("ph");}renumber();updateEmpty();placeCaret(cur,true);return;}}}if(cur&&!cur.classList.contains("codeblock")&&!cur.classList.contains("tableblock")&&caretAtStart(cur)){const ind0=parseInt(cur.dataset.indent||"0",10);if(ind0>0&&(cur.dataset.type==="ul"||cur.dataset.type==="ol"||cur.dataset.type==="todo")){e.preventDefault();setIndent(cur,ind0-1);renumber();return;}if(cur.dataset.type&&cur.dataset.type!=="p"){e.preventDefault();cur.dataset.type="p";cur.removeAttribute("data-checked");cur.removeAttribute("data-open");setIndent(cur,0);renumber();updateEmpty();return;}const prev=cur.previousElementSibling;if(prev){e.preventDefault();if(prev.classList.contains("divider")||prev.getAttribute("contenteditable")==="false"){prev.remove();updateEmpty();return;}placeCaret(prev,false);while(cur.firstChild){const f=cur.firstChild;if(f.nodeName==="BR"&&cur.childNodes.length===1){cur.removeChild(f);break;}prev.appendChild(f);}cur.remove();renumber();updateEmpty();}}}
     });
     // 엔터 = 새 줄(새 블록). beforeinput은 한글 IME 커밋 후 발생하므로 IME에서도 안정적.
     editorEl.addEventListener("beforeinput",function(e){
@@ -755,8 +768,8 @@ function runApp(signal, created) {
       splitBlockAfter(cur,(type==="ul"||type==="ol"||type==="todo"||type==="confirm")?type:"p");
     });
     // 중간컨펌: 날짜 입력 시 요일 자동 추가 + 빈 칸 placeholder
-    function fmtConfirm(blk){const raw=blk.textContent.replace(/ /g," ").trim();if(/^\d{2,4}\.\d{1,2}\.\d{1,2}\(.\)/.test(raw)){blk.classList.remove("ph");return;}const digits=raw.replace(/[^0-9]/g,"");blk.classList.toggle("ph",digits==="");let y,mo,d;if(digits.length===6){y=2000+ +digits.slice(0,2);mo=+digits.slice(2,4);d=+digits.slice(4,6);}else if(digits.length===8){y=+digits.slice(0,4);mo=+digits.slice(4,6);d=+digits.slice(6,8);}else return;if(mo>=1&&mo<=12&&d>=1&&d<=31){const dt=new Date(y,mo-1,d);if(!isNaN(dt.getTime())&&dt.getMonth()===mo-1){const wd=["일","월","화","수","목","금","토"][dt.getDay()];blk.textContent=(digits.length===6?String(y).slice(2):String(y))+"."+pad(mo)+"."+pad(d)+"("+wd+")";placeCaret(blk,false);}}}
-    editorEl.addEventListener("input",function(){editorEl.classList.remove("err");renumber();updateEmpty();if(composing){hideMenu();return;}const blk=currentBlock();if(tryShortcut(blk)){if(blk&&blk.dataset.type==="confirm")fmtConfirm(blk);hideMenu();return;}if(blk&&blk.dataset.type==="confirm"){fmtConfirm(blk);hideMenu();return;}if(!blk||blk.classList.contains("tableblock")||blk.classList.contains("media")||blk.classList.contains("codeblock")){hideMenu();return;}const tb=textBeforeCaret(blk);const m=tb.match(/(?:^|\s)\/([^\s/]*)$/);if(m){slashQuery=m[1];if(!menuOpen)showMenu();else positionMenu();filterMenu();}else if(menuOpen)hideMenu();});
+    function fmtConfirm(blk){const raw=blk.textContent.replace(/ /g," ").trim();if(/^\d{2,4}\.\d{1,2}\.\d{1,2}\(.\)/.test(raw)){blk.classList.remove("ph");return;}const full=blk.textContent;const lead=full.match(/^\s*(\d+)/);blk.classList.toggle("ph",full.trim()==="");if(!lead)return;const digits=lead[1];const rest=full.slice(lead[0].length);let y,mo,d;if(digits.length===6){y=2000+ +digits.slice(0,2);mo=+digits.slice(2,4);d=+digits.slice(4,6);}else if(digits.length===8){y=+digits.slice(0,4);mo=+digits.slice(4,6);d=+digits.slice(6,8);}else return;if(mo>=1&&mo<=12&&d>=1&&d<=31){const dt=new Date(y,mo-1,d);if(!isNaN(dt.getTime())&&dt.getMonth()===mo-1){const wd=["일","월","화","수","목","금","토"][dt.getDay()];blk.classList.remove("ph");const dstr=(digits.length===6?String(y).slice(2):String(y))+"."+pad(mo)+"."+pad(d)+"("+wd+")";blk.textContent=dstr+rest;const tn=blk.firstChild;if(tn&&tn.nodeType===3){const r=document.createRange();r.setStart(tn,Math.min(dstr.length,tn.length||0));r.collapse(true);const s=window.getSelection();s.removeAllRanges();s.addRange(r);}else{placeCaret(blk,false);}}}}
+    editorEl.addEventListener("input",function(){editorEl.classList.remove("err");renumber();updateEmpty();histRecordDebounced();if(composing){hideMenu();return;}const blk=currentBlock();if(tryShortcut(blk)){if(blk&&blk.dataset.type==="confirm")fmtConfirm(blk);hideMenu();return;}if(blk&&blk.dataset.type==="confirm"){fmtConfirm(blk);hideMenu();return;}if(!blk||blk.classList.contains("tableblock")||blk.classList.contains("media")||blk.classList.contains("codeblock")){hideMenu();return;}const tb=textBeforeCaret(blk);const m=tb.match(/(?:^|\s)\/([^\s/]*)$/);if(m){slashQuery=m[1];if(!menuOpen)showMenu();else positionMenu();filterMenu();}else if(menuOpen)hideMenu();});
     menuEl.addEventListener("mousedown",function(e){const it=e.target.closest(".si");if(!it)return;e.preventDefault();activeIndex=+it.dataset.i;chooseActive();});
     menuEl.addEventListener("mousemove",function(e){const it=e.target.closest(".si");if(!it)return;const i=+it.dataset.i;if(i!==activeIndex){activeIndex=i;renderMenu();}});
     document.addEventListener("mousedown",function(e){if(menuOpen&&!menuEl.contains(e.target)&&!editorEl.contains(e.target))hideMenu();},{signal});
@@ -808,7 +821,7 @@ function runApp(signal, created) {
       if(/^\s*\|.*\|\s*$/.test(line)&&i+1<L.length&&/^\s*\|[-:\s|]+\|\s*$/.test(L[i+1])){const head=splitRow(line);i+=2;const body=[];while(i<L.length&&/^\s*\|.*\|\s*$/.test(L[i])){body.push(splitRow(L[i]));i++;}editorEl.appendChild(tableEl([head].concat(body)));continue;}
       if(m=line.match(/^(\s*)[-*]\s+(.*)$/)){add("ul",inlineMd(m[2]),false,lvl(m[1]));i++;continue;}
       if(m=line.match(/^(\s*)\d+\.\s+(.*)$/)){add("ol",inlineMd(m[2]),false,lvl(m[1]));i++;continue;}
-      add("p",inlineMd(line));i++;}if(!editorEl.querySelector(".blk"))editorEl.appendChild(newBlk("p"));renumber();updateEmpty();}
+      add("p",inlineMd(line));i++;}if(!editorEl.querySelector(".blk"))editorEl.appendChild(newBlk("p"));renumber();updateEmpty();histReset();}
     reset();
     return {serialize:serialize,loadMarkdown:loadMarkdown,reset:reset,clearErr:function(){editorEl.classList.remove("err");},markErr:function(){editorEl.classList.add("err");},focusStart:function(){editorEl.focus();const b=editorEl.querySelector(".blk");if(b)placeCaret(b,true);}};
   }
@@ -1131,6 +1144,7 @@ function runApp(signal, created) {
 
   /* 릴리즈 내역 */
   const CHANGELOG=[
+    {v:"1.1.28",items:["n차 컨펌: 날짜 부분에서 Backspace 시 날짜만 통째로 지우고(메모는 유지) 다시 입력 가능","리스트 미리보기에도 번호 계층(1, 1-1, 1-1-1) 적용","에디터 실행 취소(Ctrl+Z)·다시 실행(Ctrl+Shift+Z / Ctrl+Y) 추가 — 최대 50단계 기억"]},
     {v:"1.1.27",items:["에디터: 목록·글머리 항목 중간에서 Enter 시 문장이 커서 기준으로 쪼개져 새 항목으로 넘어가도록 수정","번호 목록 들여쓰기 시 1 → 1-1 → 1-1-1 계층 번호 표시","글머리·번호 목록 들여쓰기를 최대 5단계로 제한"]},
     {v:"1.1.26",items:["연차 사용 내역을 최신 날짜순(위→아래)으로 정렬","날짜 선택 전에는 연차 신청 버튼 비활성화","시간차 시간 드롭다운을 09·11·14·16·18로 변경하고 점심(12~13시) 제외해 계산(09~14=4시간, 09~16=6시간)"]},
     {v:"1.1.25",items:["연차: 항상 두 번 클릭(시작일→종료일, 하루면 같은 날 두 번)으로 선택하도록 통일 + 한 번만 누르면 '종료일을 선택해 주세요' 안내","연차 달력에 '선택 취소' 버튼 추가"]},

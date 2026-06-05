@@ -196,6 +196,11 @@ ul.list.cards .task{margin-bottom:0}
 .md h3{font-size:13.5px;font-weight:700;margin:7px 0 3px;color:var(--ink)}
 .md p{margin:4px 0}
 .md ul,.md ol{margin:5px 0 5px 19px} .md li{margin:2px 0}
+.md ul.mdol{list-style:none;margin:5px 0 5px 4px;padding:0}
+.md li>ul.mdol{margin:3px 0 3px 16px}
+.md ul.mdol>li.olli{margin:2px 0}
+.md ul.mdol>li.olli>.olrow{display:flex;gap:6px;align-items:baseline}
+.md ul.mdol>li.olli>.olrow>.oln{flex-shrink:0;color:var(--soft);font-variant-numeric:tabular-nums;white-space:nowrap}
 .md blockquote{border-left:3px solid var(--line);padding-left:11px;color:var(--soft);margin:6px 0}
 .md hr{border:none;border-top:1px solid var(--line);margin:10px 0}
 .md strong{font-weight:700;color:var(--ink)} .md em{font-style:italic}
