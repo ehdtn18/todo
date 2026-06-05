@@ -413,7 +413,7 @@ function runApp(signal, created) {
     let h='';
     const byTeam={};allUsers.forEach(function(u){(byTeam[u.team]=byTeam[u.team]||[]).push(u);});
     Object.keys(byTeam).forEach(function(team){
-      h+='<button class="sortopt vp-teamhd'+(viewTarget.type==="team"&&viewTarget.team===team?" sel":"")+'" data-vt="team" data-team="'+esc(team)+'">'+esc(team)+' <span class="vp-sub">'+byTeam[team].length+'명 · 전체</span></button>';
+      h+='<button class="sortopt vp-teamhd'+(viewTarget.type==="team"&&viewTarget.team===team?" sel":"")+'" data-vt="team" data-team="'+esc(team)+'">'+esc(team)+' <span class="vp-sub">'+byTeam[team].length+'명</span></button>';
       byTeam[team].forEach(function(u){const self=currentUser&&u.id===currentUser.id;const sel=self?viewTarget.type==="me":(viewTarget.type==="user"&&viewTarget.id===u.id);const dn=dispName(u);h+='<button class="sortopt vp-mem'+(sel?" sel":"")+'" data-vt="user" data-uid="'+esc(u.id)+'" data-name="'+esc(dn)+'">'+esc(dn)+(self?' <span class="vp-sub">나</span>':"")+'</button>';});
     });
     $("viewPopList").innerHTML=h;
@@ -426,6 +426,7 @@ function runApp(signal, created) {
   $("viewReset").onclick=function(){selectView({type:"me"});};
   document.addEventListener("mousedown",function(e){if(viewPopOpen()&&!$("viewPop").contains(e.target)&&!$("viewAsBtn").contains(e.target))closeViewPop();},{signal});
   window.addEventListener("resize",function(){if(viewPopOpen())positionViewPop();},{signal});
+  window.addEventListener("scroll",function(){if(viewPopOpen())positionViewPop();},{signal,passive:true,capture:true});
 
   function pad(n){return String(n).padStart(2,"0");}
   function ymd(d){return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());}
@@ -988,6 +989,7 @@ function runApp(signal, created) {
 
   /* 릴리즈 내역 */
   const CHANGELOG=[
+    {v:"1.1.16",items:["팀 보기 드롭다운에서 '· 전체' 문구 제거(인원수만 표시)","드롭다운이 스크롤 시 트리거 버튼을 따라가도록 위치 보정"]},
     {v:"1.1.15",items:["검색어와 일치하는 글자에 연한 파란 하이라이트 표시","검색창에 입력이 있으면 X 버튼으로 즉시 지우기"]},
     {v:"1.1.14",items:["우선순위 보기·완료 보기를 하나의 '보기 옵션' 드롭다운으로 통합(초기화 포함)","검색 추가 — 정렬 옆 돋보기를 누르면 입력창이 펼쳐지고, 입력 즉시 제목·내용으로 실시간 검색(엔터 불필요)","리스트 컨트롤을 정렬·검색·보기옵션 3개 버튼으로 정리"]},
     {v:"1.1.13",items:["회원가입에서 성·이름을 따로 입력(전체 이름은 DB에 보관)","화면에는 이름만 표시(담당자 배지·로그인 칩·팀원 목록)","로그인 칩에 사람 아이콘 추가 + 우측 버튼들과 동일한 흰색·높이로 통일"]},
@@ -1202,6 +1204,7 @@ function runApp(signal, created) {
   $("sortReset").onclick=function(){applySort("created");};
   document.addEventListener("mousedown",function(e){if(sortPopOpen()&&!$("sortPop").contains(e.target)&&!$("sortBtn").contains(e.target))closeSortPop();},{signal});
   window.addEventListener("resize",function(){if(sortPopOpen())positionSortPop();},{signal});
+  window.addEventListener("scroll",function(){if(sortPopOpen())positionSortPop();},{signal,passive:true,capture:true});
 
   /* ===== 보기 옵션 드롭다운(우선순위·완료) ===== */
   function dispPopOpen(){return $("dispPop").classList.contains("open");}
@@ -1211,6 +1214,7 @@ function runApp(signal, created) {
   $("dispBtn").onclick=function(e){e.stopPropagation();if(dispPopOpen())closeDispPop();else openDispPop();};
   document.addEventListener("mousedown",function(e){if(dispPopOpen()&&!$("dispPop").contains(e.target)&&!$("dispBtn").contains(e.target))closeDispPop();},{signal});
   window.addEventListener("resize",function(){if(dispPopOpen())positionDispPop();},{signal});
+  window.addEventListener("scroll",function(){if(dispPopOpen())positionDispPop();},{signal,passive:true,capture:true});
 
   /* ===== 검색 (노션식 인라인 확장 · 즉시 검색) ===== */
   function searchOpen(){return $("searchWrap").classList.contains("open");}
