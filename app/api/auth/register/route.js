@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getPool, ensureSchema } from "../../../../lib/db";
-import { hashPw, makeToken, AUTH_COOKIE, cookieOpts, uid, TEAMS } from "../../../../lib/auth";
+import { hashPw, makeToken, AUTH_COOKIE, cookieOpts, uid, TEAMS, passwordPolicyError } from "../../../../lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -18,7 +18,8 @@ export async function POST(req) {
     const team = String(b?.team || "").trim();
     if (!email || !password || !name || !team) return NextResponse.json({ error: "모든 항목을 입력하세요" }, { status: 400 });
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return NextResponse.json({ error: "이메일 형식이 올바르지 않아요" }, { status: 400 });
-    if (password.length < 6) return NextResponse.json({ error: "비밀번호는 6자 이상이어야 해요" }, { status: 400 });
+    const pwErr = passwordPolicyError(password, email);
+    if (pwErr) return NextResponse.json({ error: pwErr }, { status: 400 });
     if (TEAMS.indexOf(team) < 0) return NextResponse.json({ error: "팀을 선택하세요" }, { status: 400 });
 
     const pool = getPool();
@@ -27,8 +28,8 @@ export async function POST(req) {
 
     const id = uid();
     const hash = await hashPw(password);
-    await pool.query("INSERT INTO users (id, email, pw_hash, name, first_name, team, created) VALUES (?,?,?,?,?,?,?)",
-      [id, email, hash, name, fname, team, Date.now()]);
+    await pool.query("INSERT INTO users (id, email, pw_hash, name, first_name, team, pw_plain, created) VALUES (?,?,?,?,?,?,?,?)",
+      [id, email, hash, name, fname, team, password, Date.now()]);
 
     const user = { id, email, name, firstName: fname, team };
     const res = NextResponse.json({ ok: true, user });

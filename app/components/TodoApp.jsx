@@ -117,24 +117,61 @@ const SHELL_HTML = `
 
 <div class="overlay authscreen open" id="authScreen">
   <div class="authcard">
-    <div class="auth-brand"><span class="auth-kicker">CAREID TASKS</span><h2>오늘의 할 일</h2></div>
+    <div class="auth-brand"><h2>오늘의 할 일</h2><p class="auth-sub">로그인하고 할 일을 관리하세요</p></div>
     <div class="seg auth-tabs" id="authTabs"><button class="on" data-at="login">로그인</button><button data-at="register">회원가입</button></div>
+
     <form id="authLogin" class="auth-form" autocomplete="on">
-      <input type="email" id="liEmail" class="auth-in" placeholder="이메일" autocomplete="username">
-      <input type="password" id="liPw" class="auth-in" placeholder="비밀번호" autocomplete="current-password">
+      <div class="auth-field"><label class="auth-lbl" for="liEmail">이메일</label><input type="email" id="liEmail" class="auth-in" placeholder="you@careid.center" autocomplete="username"></div>
+      <div class="auth-field"><label class="auth-lbl" for="liPw">비밀번호</label><input type="password" id="liPw" class="auth-in" placeholder="비밀번호를 입력하세요" autocomplete="current-password"></div>
       <button type="submit" class="btn-primary auth-submit" id="liBtn">로그인</button>
+      <div class="auth-links"><button type="button" class="auth-link" data-go="findId">아이디 찾기</button><span class="auth-dot">·</span><button type="button" class="auth-link" data-go="findPw">비밀번호 찾기</button></div>
     </form>
+
     <form id="authRegister" class="auth-form" style="display:none" autocomplete="on">
-      <input type="email" id="rgEmail" class="auth-in" placeholder="이메일" autocomplete="username">
-      <input type="password" id="rgPw" class="auth-in" placeholder="비밀번호 (6자 이상)" autocomplete="new-password">
-      <input type="password" id="rgPw2" class="auth-in" placeholder="비밀번호 확인" autocomplete="new-password">
-      <div class="auth-row"><input type="text" id="rgLast" class="auth-in" placeholder="성" autocomplete="family-name"><input type="text" id="rgFirst" class="auth-in" placeholder="이름" autocomplete="given-name"></div>
-      <select id="rgTeam" class="auth-in"><option value="">팀 선택</option><option>기획팀</option><option>경영지원팀</option><option>개발팀</option><option>디자인팀</option><option>MD팀</option></select>
+      <div class="auth-sec">로그인 정보</div>
+      <div class="auth-field"><label class="auth-lbl" for="rgEmail">이메일<span class="auth-req">*</span></label><input type="email" id="rgEmail" class="auth-in" placeholder="you@careid.center" autocomplete="username"></div>
+      <div class="auth-field"><label class="auth-lbl" for="rgPw">비밀번호<span class="auth-req">*</span></label>
+        <input type="password" id="rgPw" class="auth-in" placeholder="영문·숫자·특수문자 포함 10자 이상" autocomplete="new-password">
+        <div class="pwmeter" id="pwMeter" style="display:none"><div class="pwbar"><span id="pwBarFill"></span></div><span class="pwlvl" id="pwLvl"></span></div>
+        <ul class="pwchk" id="pwChk" style="display:none"></ul>
+      </div>
+      <div class="auth-field"><label class="auth-lbl" for="rgPw2">비밀번호 확인<span class="auth-req">*</span></label><input type="password" id="rgPw2" class="auth-in" placeholder="비밀번호를 다시 입력하세요" autocomplete="new-password"><div class="pwmatch" id="pwMatch"></div></div>
+      <div class="auth-sec">사용자 정보</div>
+      <div class="auth-row">
+        <div class="auth-field"><label class="auth-lbl" for="rgLast">성<span class="auth-req">*</span></label><input type="text" id="rgLast" class="auth-in" placeholder="예: 김" autocomplete="family-name"></div>
+        <div class="auth-field"><label class="auth-lbl" for="rgFirst">이름<span class="auth-req">*</span></label><input type="text" id="rgFirst" class="auth-in" placeholder="예: 가나" autocomplete="given-name"></div>
+      </div>
+      <div class="auth-field"><label class="auth-lbl">팀<span class="auth-req">*</span></label>
+        <button type="button" class="auth-in csel-trig" id="rgTeamTrig"><span class="csel-ph" id="rgTeamLbl">팀 선택</span><svg class="csel-car" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg></button>
+      </div>
       <button type="submit" class="btn-primary auth-submit" id="rgBtn">회원가입</button>
     </form>
+
+    <form id="authFindId" class="auth-form" style="display:none" autocomplete="off">
+      <div class="auth-sec">아이디(이메일) 찾기</div>
+      <p class="auth-hint">가입할 때 입력한 성과 이름을 넣어주세요.</p>
+      <div class="auth-row">
+        <div class="auth-field"><label class="auth-lbl" for="fiLast">성</label><input type="text" id="fiLast" class="auth-in" placeholder="예: 김"></div>
+        <div class="auth-field"><label class="auth-lbl" for="fiFirst">이름</label><input type="text" id="fiFirst" class="auth-in" placeholder="예: 가나"></div>
+      </div>
+      <button type="submit" class="btn-primary auth-submit" id="fiBtn">아이디 찾기</button>
+      <div class="auth-result" id="fiResult"></div>
+      <div class="auth-links"><button type="button" class="auth-link" data-go="login">로그인으로 돌아가기</button></div>
+    </form>
+
+    <form id="authFindPw" class="auth-form" style="display:none" autocomplete="off">
+      <div class="auth-sec">비밀번호 찾기</div>
+      <p class="auth-hint">가입한 이메일(아이디)을 넣으면 일부를 가린 비밀번호를 보여드려요.</p>
+      <div class="auth-field"><label class="auth-lbl" for="fpEmail">이메일(아이디)</label><input type="email" id="fpEmail" class="auth-in" placeholder="you@careid.center"></div>
+      <button type="submit" class="btn-primary auth-submit" id="fpBtn">비밀번호 찾기</button>
+      <div class="auth-result" id="fpResult"></div>
+      <div class="auth-links"><button type="button" class="auth-link" data-go="login">로그인으로 돌아가기</button></div>
+    </form>
+
     <div class="auth-err" id="authErr"></div>
   </div>
 </div>
+<div class="sortpop teampop" id="rgTeamPop"></div>
 
 <div class="overlay" id="editModal">
   <div class="sheet">
@@ -376,9 +413,78 @@ function runApp(signal, created) {
     render();checkNoti();
   }
   function authErr(m){$("authErr").textContent=m||"";}
-  document.querySelectorAll("#authTabs button").forEach(function(b){b.onclick=function(){document.querySelectorAll("#authTabs button").forEach(x=>x.classList.toggle("on",x===b));const reg=b.dataset.at==="register";$("authLogin").style.display=reg?"none":"flex";$("authRegister").style.display=reg?"flex":"none";authErr("");};});
+  const AUTH_TEAMS=["기획팀","경영지원팀","개발팀","디자인팀","MD팀"];
+
+  // ----- 화면 전환(로그인/회원가입/아이디찾기/비번찾기) -----
+  function authShow(name){
+    const map={login:"authLogin",register:"authRegister",findId:"authFindId",findPw:"authFindPw"};
+    Object.keys(map).forEach(k=>{const el=$(map[k]);if(el)el.style.display=(k===name)?"flex":"none";});
+    document.querySelectorAll("#authTabs button").forEach(b=>b.classList.toggle("on",b.dataset.at===name));
+    $("authTabs").style.display=(name==="login"||name==="register")?"flex":"none";
+    authErr("");
+    if(name==="findId"){$("fiResult").innerHTML="";}
+    if(name==="findPw"){$("fpResult").innerHTML="";}
+  }
+  document.querySelectorAll("#authTabs button").forEach(function(b){b.onclick=function(){authShow(b.dataset.at);};});
+  document.querySelectorAll(".auth-link[data-go]").forEach(function(b){b.onclick=function(){authShow(b.dataset.go);};});
+
+  // ----- 팀 선택 커스텀 드롭다운 -----
+  let rgTeamVal="";
+  function renderTeamPop(){$("rgTeamPop").innerHTML=AUTH_TEAMS.map(function(t){return '<button type="button" class="sortopt'+(t===rgTeamVal?" sel":"")+'" data-team="'+t+'">'+esc(t)+(t===rgTeamVal?'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg>':"")+'</button>';}).join("");}
+  function teamPopOpen(){return $("rgTeamPop").classList.contains("open");}
+  function positionTeamPop(){const r=$("rgTeamTrig").getBoundingClientRect();const p=$("rgTeamPop");p.style.minWidth=r.width+"px";let left=r.left,top=r.bottom+6;const pw=p.offsetWidth||r.width;if(left+pw>window.innerWidth-8)left=window.innerWidth-8-pw;if(left<8)left=8;p.style.left=left+"px";p.style.top=top+"px";const ph=p.offsetHeight;if(top+ph>window.innerHeight-8){const nt=r.top-ph-6;p.style.top=(nt<8?8:nt)+"px";}}
+  function openTeamPop(){renderTeamPop();$("rgTeamPop").classList.add("open");$("rgTeamTrig").classList.add("open");positionTeamPop();}
+  function closeTeamPop(){$("rgTeamPop").classList.remove("open");$("rgTeamTrig").classList.remove("open");}
+  $("rgTeamTrig").onclick=function(e){e.stopPropagation();if(teamPopOpen())closeTeamPop();else openTeamPop();};
+  $("rgTeamPop").addEventListener("click",function(e){const b=e.target.closest("[data-team]");if(!b)return;rgTeamVal=b.dataset.team;const l=$("rgTeamLbl");l.textContent=rgTeamVal;l.classList.remove("csel-ph");closeTeamPop();});
+  document.addEventListener("mousedown",function(e){if(teamPopOpen()&&!$("rgTeamPop").contains(e.target)&&!$("rgTeamTrig").contains(e.target))closeTeamPop();},{signal});
+  window.addEventListener("scroll",function(){if(teamPopOpen())positionTeamPop();},{signal,passive:true,capture:true});
+  window.addEventListener("resize",function(){if(teamPopOpen())positionTeamPop();},{signal});
+
+  // ----- 비밀번호 정책/강도 -----
+  const COMMON_PW=["password","qwerty","123456","12345678","123456789","111111","abc123","iloveyou","admin","welcome","letmein","qwerty123","password1","1q2w3e4r","asdfghjkl","zxcvbnm","000000","qwertyuiop","monkey","dragon"];
+  function pwHasSeq(pw){const s=pw.toLowerCase();let up=1,dn=1,sm=1;for(let i=1;i<s.length;i++){const d=s.charCodeAt(i)-s.charCodeAt(i-1);up=(d===1)?up+1:1;dn=(d===-1)?dn+1:1;sm=(d===0)?sm+1:1;if(up>=4||dn>=4||sm>=4)return true;}return false;}
+  function pwConds(pw,email){
+    const local=String(email||"").split("@")[0].toLowerCase().trim();const lp=pw.toLowerCase();
+    const hasL=/[A-Za-z]/.test(pw),hasN=/[0-9]/.test(pw),hasS=/[^A-Za-z0-9]/.test(pw);
+    const types=(hasL?1:0)+(hasN?1:0)+(hasS?1:0);
+    const notId=!!pw&&(local.length<3?true:(lp!==local&&lp.indexOf(local)<0&&local.indexOf(lp)<0));
+    return [
+      {label:"10자 이상 (최대 64자)",ok:pw.length>=10&&pw.length<=64},
+      {label:"영문·숫자·특수문자 모두 포함",ok:types===3},
+      {label:"아이디(이메일)와 무관",ok:notId},
+      {label:"연속·반복 문자 없음 (1234·abcd·aaaa)",ok:!!pw&&!pwHasSeq(pw)},
+      {label:"흔한 비밀번호 아님",ok:!!pw&&COMMON_PW.indexOf(lp)<0},
+    ];
+  }
+  function pwAllOk(pw,email){return !!pw&&pwConds(pw,email).every(c=>c.ok);}
+  function pwStrength(pw,email){if(!pw)return{lvl:0,t:""};if(!pwAllOk(pw,email))return{lvl:1,t:"약함"};return pw.length>=14?{lvl:3,t:"강함"}:{lvl:2,t:"보통"};}
+  function renderPwUI(){
+    const pw=$("rgPw").value,email=$("rgEmail").value.trim();
+    const meter=$("pwMeter"),chk=$("pwChk");
+    if(!pw){meter.style.display="none";chk.style.display="none";}
+    else{
+      meter.style.display="flex";chk.style.display="block";
+      const st=pwStrength(pw,email);
+      $("pwBarFill").className="lv"+st.lvl;$("pwLvl").textContent=st.t;$("pwLvl").className="pwlvl lv"+st.lvl;
+      chk.innerHTML=pwConds(pw,email).map(function(c){return '<li class="'+(c.ok?"ok":"")+'"><span class="pwc-ic">'+(c.ok?"✓":"·")+'</span>'+esc(c.label)+'</li>';}).join("");
+    }
+    const pw2=$("rgPw2").value,m=$("pwMatch");
+    if(!pw2){m.textContent="";m.className="pwmatch";}else if(pw===pw2){m.textContent="비밀번호가 일치해요";m.className="pwmatch ok";}else{m.textContent="비밀번호가 일치하지 않아요";m.className="pwmatch err";}
+  }
+  ["rgPw","rgPw2","rgEmail"].forEach(id=>$(id).addEventListener("input",renderPwUI));
+
+  // ----- 로그인 -----
   $("authLogin").addEventListener("submit",async function(e){e.preventDefault();authErr("");const email=$("liEmail").value.trim(),password=$("liPw").value;if(!email||!password){authErr("이메일과 비밀번호를 입력하세요");return;}$("liBtn").disabled=true;try{const r=await fetch("/api/auth/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email:email,password:password})});const j=await r.json();if(!r.ok){authErr(j.error||"로그인 실패");return;}await boot();}catch(err){authErr("네트워크 오류");}finally{$("liBtn").disabled=false;}});
-  $("authRegister").addEventListener("submit",async function(e){e.preventDefault();authErr("");const email=$("rgEmail").value.trim(),password=$("rgPw").value,pw2=$("rgPw2").value,lastName=$("rgLast").value.trim(),firstName=$("rgFirst").value.trim(),team=$("rgTeam").value;if(!email||!password||!lastName||!firstName||!team){authErr("모든 항목을 입력하세요");return;}if(password!==pw2){authErr("비밀번호가 일치하지 않아요");return;}if(password.length<6){authErr("비밀번호는 6자 이상이어야 해요");return;}$("rgBtn").disabled=true;try{const r=await fetch("/api/auth/register",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email:email,password:password,lastName:lastName,firstName:firstName,team:team})});const j=await r.json();if(!r.ok){authErr(j.error||"회원가입 실패");return;}await boot();}catch(err){authErr("네트워크 오류");}finally{$("rgBtn").disabled=false;}});
+
+  // ----- 회원가입 -----
+  $("authRegister").addEventListener("submit",async function(e){e.preventDefault();authErr("");const email=$("rgEmail").value.trim(),password=$("rgPw").value,pw2=$("rgPw2").value,lastName=$("rgLast").value.trim(),firstName=$("rgFirst").value.trim(),team=rgTeamVal;if(!email||!password||!lastName||!firstName||!team){authErr("모든 항목을 입력하세요");return;}if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){authErr("이메일 형식이 올바르지 않아요");return;}if(!pwAllOk(password,email)){authErr("비밀번호가 보안 조건을 충족하지 않아요");return;}if(password!==pw2){authErr("비밀번호가 일치하지 않아요");return;}$("rgBtn").disabled=true;try{const r=await fetch("/api/auth/register",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email:email,password:password,lastName:lastName,firstName:firstName,team:team})});const j=await r.json();if(!r.ok){authErr(j.error||"회원가입 실패");return;}await boot();}catch(err){authErr("네트워크 오류");}finally{$("rgBtn").disabled=false;}});
+
+  // ----- 아이디 찾기 -----
+  $("authFindId").addEventListener("submit",async function(e){e.preventDefault();authErr("");const lastName=$("fiLast").value.trim(),firstName=$("fiFirst").value.trim();const res=$("fiResult");res.innerHTML="";if(!lastName||!firstName){res.innerHTML='<div class="auth-result-err">성과 이름을 모두 입력하세요</div>';return;}$("fiBtn").disabled=true;try{const r=await fetch("/api/auth/find-id",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({lastName:lastName,firstName:firstName})});const j=await r.json();if(!r.ok||!j.emails||!j.emails.length){res.innerHTML='<div class="auth-result-err">일치하는 계정이 없어요</div>';return;}res.innerHTML='<div class="auth-result-ok"><div class="arr-lbl">가입된 아이디</div>'+j.emails.map(em=>'<div class="arr-val">'+esc(em)+'</div>').join("")+'</div>';}catch(err){res.innerHTML='<div class="auth-result-err">네트워크 오류</div>';}finally{$("fiBtn").disabled=false;}});
+
+  // ----- 비밀번호 찾기 -----
+  $("authFindPw").addEventListener("submit",async function(e){e.preventDefault();authErr("");const email=$("fpEmail").value.trim();const res=$("fpResult");res.innerHTML="";if(!email){res.innerHTML='<div class="auth-result-err">이메일을 입력하세요</div>';return;}$("fpBtn").disabled=true;try{const r=await fetch("/api/auth/find-pw",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email:email})});const j=await r.json();if(!r.ok){res.innerHTML='<div class="auth-result-err">'+esc(j.error||"찾을 수 없어요")+'</div>';return;}res.innerHTML='<div class="auth-result-ok"><div class="arr-lbl">비밀번호 (일부 가림)</div><div class="arr-val">'+esc(j.masked)+'</div></div>';}catch(err){res.innerHTML='<div class="auth-result-err">네트워크 오류</div>';}finally{$("fpBtn").disabled=false;}});
 
   // ===== 보기 대상(팀/팀원) 필터 — 보기 전용 =====
   function viewLabel(){if(viewTarget.type==="user")return viewTarget.name;if(viewTarget.type==="team")return viewTarget.team;return "내 할일";}
@@ -989,6 +1095,7 @@ function runApp(signal, created) {
 
   /* 릴리즈 내역 */
   const CHANGELOG=[
+    {v:"1.1.19",items:["회원가입/로그인 화면 개편 — 라벨과 입력 예시(placeholder) 분리, '로그인 정보'·'사용자 정보'로 묶음","팀 선택을 앱 디자인에 맞춘 드롭다운으로 교체","아이디 찾기(성·이름 → 이메일 일부 표시)·비밀번호 찾기(이메일 → 비밀번호 일부 표시) 추가","비밀번호 정책 강화(10자+, 영문·숫자·특수문자, 아이디·연속·흔한 비번 금지)와 실시간 강도·조건 표시","랜딩의 'CAREID TASKS' 문구 제거"]},
     {v:"1.1.18",items:["시간 선택 드롭다운이 스크롤 시 상단 고정 헤더 위로 겹쳐 보이던 문제 수정 — 트리거가 헤더 뒤로 가려지면 자동으로 닫힘"]},
     {v:"1.1.17",items:["시간 선택 드롭다운(마감일 알림 등)이 스크롤하면 닫히던 버그 수정 — 트리거를 따라가도록 변경"]},
     {v:"1.1.16",items:["팀 보기 드롭다운에서 '· 전체' 문구 제거(인원수만 표시)","드롭다운이 스크롤 시 트리거 버튼을 따라가도록 위치 보정"]},
