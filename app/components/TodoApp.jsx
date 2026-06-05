@@ -934,6 +934,20 @@ function runApp(signal, created) {
   // - 생성: 살짝 아래에서 떠오르며 페이드 + 부드러운 글로우
   // - 수정: 제자리에서 가벼운 펄스 + 글로우
   // - 도착 항목이 화면 밖이면 먼저 스크롤로 보이게 한 뒤 재생
+  // 스크롤이 실제로 멈출 때까지 기다렸다가 콜백 (고정 지연 대신 스크롤 종료 감지)
+  function whenScrollEnds(cb){
+    let lastY=window.scrollY||window.pageYOffset||0,stable=0,frames=0,moved=false;
+    function tick(){
+      frames++;
+      const y=window.scrollY||window.pageYOffset||0,d=Math.abs(y-lastY);
+      if(d>0.5)moved=true;
+      stable=(d<0.5)?stable+1:0;
+      lastY=y;
+      if((moved&&stable>=3)||(!moved&&frames>=8)||frames>180){cb();return;}
+      requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  }
   function revealTask(id,mode){
     const target=$("view").querySelector('[data-id="'+id+'"]');
     if(!target)return;
@@ -947,7 +961,7 @@ function runApp(signal, created) {
       el.classList.remove("task-appear","task-updated");void el.offsetWidth;el.classList.add(cls);
       setTimeout(function(){el.classList.remove(cls);},1300);
     }
-    if(!inView){try{target.scrollIntoView({behavior:"smooth",block:"center"});}catch(_){}setTimeout(play,420);}
+    if(!inView){try{target.scrollIntoView({behavior:"smooth",block:"center"});}catch(_){}whenScrollEnds(play);}
     else play();
   }
   function add(){
@@ -1063,6 +1077,7 @@ function runApp(signal, created) {
 
   /* 릴리즈 내역 */
   const CHANGELOG=[
+    {v:"1.1.23",items:["새 항목 생성 시, 화면 밖이면 스크롤이 끝난 뒤에 등장 애니메이션을 재생하도록 개선(고정 지연 → 스크롤 종료 감지)"]},
     {v:"1.1.22",items:["할 일 생성·수정 애니메이션 전면 개편 — 화면을 가로지르던 칩 모션 제거, 애플식의 부드러운 등장(살짝 떠오르며 페이드+글로우)·수정 강조(가벼운 펄스)로 변경"]},
     {v:"1.1.21",items:["로그인·회원가입·아이디/비밀번호 찾기의 오류 안내를 토스트로 통일"]},
     {v:"1.1.20",items:["초기 데이터 로딩 중 로딩 스피너 표시","비밀번호 찾기를 이메일+성·이름 일치 시에만 표시(보안 강화)","비밀번호 마스킹을 5글자로(맨앞·가운데3·맨뒤)","비밀번호 강도: 조건 충족 개수에 따라 약함→보통→강함(5개 충족 시 강함)","같은 팀 동명이인 가입 차단","입력 예시 문구 정리(example@email.com, 홍/길동)"]},
