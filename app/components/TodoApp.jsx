@@ -258,33 +258,34 @@ const SHELL_HTML = `
       <div class="mp-body">
         <div class="mp-panel" data-mp="account">
           <div class="mp-userhead" id="mpUserHead"></div>
-          <div class="flabel">비밀번호 변경</div>
-          <input type="password" id="mpCurPw" class="auth-in mp-in" placeholder="현재 비밀번호" autocomplete="current-password">
-          <input type="password" id="mpNewPw" class="auth-in mp-in" placeholder="새 비밀번호 (6자 이상)" autocomplete="new-password">
-          <input type="password" id="mpNewPw2" class="auth-in mp-in" placeholder="새 비밀번호 확인" autocomplete="new-password">
-          <div class="mp-msg" id="mpPwMsg"></div>
-          <button class="btn-primary mp-pwbtn" id="mpPwBtn">비밀번호 변경</button>
+          <button class="mp-openpw" id="mpOpenPw"><span>비밀번호 변경하기</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
+          <div class="mp-pwform" id="mpPwForm" style="display:none">
+            <div class="flabel">비밀번호 변경</div>
+            <input type="password" id="mpCurPw" class="auth-in mp-in" placeholder="현재 비밀번호" autocomplete="current-password">
+            <input type="password" id="mpNewPw" class="auth-in mp-in" placeholder="새 비밀번호 (영문·숫자·특수문자 10자 이상)" autocomplete="new-password">
+            <input type="password" id="mpNewPw2" class="auth-in mp-in" placeholder="새 비밀번호 확인" autocomplete="new-password">
+            <div class="mp-msg" id="mpPwMsg"></div>
+            <button class="btn-primary mp-pwbtn" id="mpPwBtn">변경하기</button>
+          </div>
           <div class="mp-logoutrow"><button class="mp-logout" id="mpLogout"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>로그아웃</button></div>
         </div>
         <div class="mp-panel" data-mp="leave" style="display:none">
           <div class="lv-summary" id="lvSummary"></div>
-          <div class="flabel">연차 추가</div>
-          <div class="rangefield lv-rf" id="lvRangeField">
-            <span class="dl"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>사용 날짜 (주말·공휴일 제외)</span>
-            <span class="rv empty" id="lvRangeText">날짜 선택</span>
-          </div>
-          <div class="seg lv-typeseg" id="lvType">
-            <button class="on" data-t="full">하루 종일</button>
-            <button data-t="am">오전 반차</button>
-            <button data-t="pm">오후 반차</button>
-            <button data-t="hour">시간차</button>
-          </div>
-          <div class="lv-hoursel" id="lvHourSel" style="display:none">
-            <button class="on" data-hh="2">2시간</button>
-            <button data-hh="6">6시간</button>
+          <div class="flabel">연차 신청 <span class="flabel-hint">날짜를 누르면 선택 · 다른 날을 한 번 더 누르면 기간</span></div>
+          <div class="lvcal" id="lvCal"></div>
+          <div class="lv-typewrap" id="lvTypeWrap" style="display:none">
+            <div class="seg lv-typeseg" id="lvType">
+              <button class="on" data-t="full">하루 종일</button>
+              <button data-t="am">오전 반차</button>
+              <button data-t="pm">오후 반차</button>
+              <button data-t="hour">시간차</button>
+            </div>
+            <div class="lv-hourrange" id="lvHourRange" style="display:none">
+              <span class="lhr-tf" id="lvStartSel"></span><span class="lhr-sep">~</span><span class="lhr-tf" id="lvEndSel"></span>
+            </div>
           </div>
           <div class="lv-info" id="lvInfo">날짜를 선택하세요</div>
-          <button class="btn-primary lv-add" id="lvAddBtn">연차 추가</button>
+          <button class="btn-primary lv-add" id="lvAddBtn">연차 신청</button>
           <div class="flabel">사용 내역 <span id="lvYear" class="lv-yr"></span></div>
           <div id="lvList" class="trashlist"></div>
         </div>
@@ -347,7 +348,7 @@ function runApp(signal, created) {
   const LEAVE_DAYS=15.5, LEAVE_HOURS=124; // 15일 + 생일반차 0.5일
   let tasks=[], trash=[], leaves=[], filter="all", sortBy="created", viewMode="list", listLayout="rows", editingId=null,
       cardsExpanded=false, listHideDone=true, priGroup=false, showTime=false, calMode="month", calRef=null, calDays="all", calHideDone=true, theme="light",
-      lvType="full", lvHourVal=2, lvRange={start:null,end:null};
+      lvType="full", lvRange={start:null,end:null}, lvCalY=0, lvCalM=0, lvStartSel=null, lvEndSel=null;
   let currentUser=null, allUsers=[], viewTarget={type:"me"}, mineTasks=[], readOnly=false, searchQ="";
   const $=id=>document.getElementById(id);
 
@@ -1016,23 +1017,34 @@ function runApp(signal, created) {
   function leaveHoursOn(iso){for(let i=0;i<leaves.length;i++)if(leaves[i].date===iso)return leaves[i].hours;return 0;}
   function fmtLeaveDate(iso){const p=iso.split("-");const dt=new Date(iso+"T00:00:00");return (+p[1])+"/"+(+p[2])+" ("+wdNames[dt.getDay()]+")";}
   function paintLeaveBtn(){const rem=LEAVE_HOURS-leaveUsed(leaveYear());const b=$("leaveBtn");if(b)b.title="연차 "+hToDays(rem)+" 남음";}
-  function paintLvRange(){const el=$("lvRangeText");if(lvRange.start&&lvRange.end&&lvRange.start!==lvRange.end){el.textContent=fmtMD(lvRange.start)+" → "+fmtMD(lvRange.end);el.classList.remove("empty");}else if(lvRange.start){el.textContent=fmtLeaveDate(lvRange.start);el.classList.remove("empty");}else{el.textContent="날짜 선택";el.classList.add("empty");}$("lvRangeField").classList.remove("err");paintLvControls();}
-  // 근무 09:00~18:00 · 점심 12:00~13:00 기준 연차 차감 시간/표시
-  function lvIsMulti(){return !!(lvRange.start&&lvRange.end&&lvRange.start!==lvRange.end);}
-  function fmtAmPm(hhmm){const p=hhmm.split(":");let h=+p[0];const m=p[1];const ap=h<12?"오전":"오후";let hh=h%12;if(hh===0)hh=12;return ap+" "+hh+":"+m;}
-  function lvCurHours(){if(lvIsMulti()||lvType==="full")return 8;if(lvType==="am"||lvType==="pm")return 4;return lvHourVal;}
-  function lvCurRange(){if(lvType==="full")return["09:00","18:00"];if(lvType==="am")return["09:00","14:00"];if(lvType==="pm")return["14:00","18:00"];return["09:00",lvHourVal<=2?"11:00":"16:00"];}
+  // 단일일/기간 판별 — 같은 날(또는 시작만)이면 단일일, 다른 두 날이면 기간(각 평일 1일씩)
+  function lvIsSingle(){return !!(lvRange.start&&(!lvRange.end||lvRange.end===lvRange.start));}
+  function lvIsMulti(){return !!(lvRange.start&&lvRange.end&&lvRange.end!==lvRange.start);}
+  function lvHourDur(){const s=toMin(lvStartSel?lvStartSel.get():"09:00"),e=toMin(lvEndSel?lvEndSel.get():"11:00");return Math.max(2,(e-s)/60);}
+  function lvSingleHours(){if(lvType==="full")return 8;if(lvType==="am"||lvType==="pm")return 4;return lvHourDur();}
   function countLeaveDays(s,e){let d=new Date(s+"T00:00:00");const end=new Date((e||s)+"T00:00:00");let n=0;for(;d<=end;d.setDate(d.getDate()+1)){if(!isExcludedDay(ymd(d)))n++;}return n;}
+  // 인라인 달력(모달 안에 그대로) — 클릭으로 범위 선택
+  function renderLvCal(){
+    const y=lvCalY,m=lvCalM,first=new Date(y,m,1),sd=first.getDay(),days=new Date(y,m+1,0).getDate(),tI=todayISO();
+    let g="";
+    for(let i=0;i<sd;i++)g+='<span class="cd empty"></span>';
+    for(let d=1;d<=days;d++){const dt=new Date(y,m,d),iso=ymd(dt),dow=dt.getDay();let cls="cd";if(dow===0||dow===6||isHoliday(iso))cls+=" wk";if(isHoliday(iso))cls+=" hol";if(iso===tI)cls+=" td";if(lvRange.start&&iso===lvRange.start)cls+=" sel start";if(lvRange.end&&iso===lvRange.end)cls+=" sel end";if(lvRange.start&&(!lvRange.end||lvRange.end===lvRange.start)&&iso===lvRange.start)cls+=" sel start end";if(lvRange.start&&lvRange.end&&iso>lvRange.start&&iso<lvRange.end)cls+=" inrange";g+='<span class="'+cls+'" data-d="'+iso+'">'+d+'</span>';}
+    const trail=(7-((sd+days)%7))%7;for(let i=0;i<trail;i++)g+='<span class="cd empty"></span>';
+    $("lvCal").innerHTML='<div class="cal-hd"><button type="button" class="cnav" data-lvnav="-1">‹</button><div class="ctitle2">'+y+'년 '+(m+1)+'월</div><button type="button" class="cnav" data-lvnav="1">›</button></div><div class="cal-wd"><span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span></div><div class="cal-grid">'+g+'</div>';
+  }
   function paintLvControls(){
-    const multi=lvIsMulti();
-    if(multi&&lvType!=="full"){lvType="full";}
-    document.querySelectorAll("#lvType button").forEach(function(b){const isFull=b.dataset.t==="full";b.classList.toggle("dim",multi&&!isFull);b.classList.toggle("on",b.dataset.t===lvType);});
-    $("lvHourSel").style.display=(!multi&&lvType==="hour")?"flex":"none";
+    const single=lvIsSingle(),multi=lvIsMulti();
+    $("lvTypeWrap").style.display=single?"block":"none";
+    if(multi)lvType="full";
+    document.querySelectorAll("#lvType button").forEach(b=>b.classList.toggle("on",b.dataset.t===lvType));
+    $("lvHourRange").style.display=(single&&lvType==="hour")?"flex":"none";
     let info="";
-    if(!lvRange.start){info="날짜를 선택하세요";}
-    else if(multi){const n=countLeaveDays(lvRange.start,lvRange.end);info="총 "+n+"일 선택 ("+n+"일 사용)";}
-    else if(lvType==="full"){info="하루 종일 · 1일(8시간) 사용";}
-    else{const r=lvCurRange();info=fmtAmPm(r[0])+" – "+fmtAmPm(r[1])+" ("+lvCurHours()+"시간 사용)";}
+    if(!lvRange.start)info="날짜를 선택하세요";
+    else if(multi){const n=countLeaveDays(lvRange.start,lvRange.end);info=fmtMD(lvRange.start)+" → "+fmtMD(lvRange.end)+" · "+n+"일 사용";}
+    else if(lvType==="full")info=fmtLeaveDate(lvRange.start)+" · 하루 종일(8시간)";
+    else if(lvType==="am")info=fmtLeaveDate(lvRange.start)+" · 오전 반차(4시간)";
+    else if(lvType==="pm")info=fmtLeaveDate(lvRange.start)+" · 오후 반차(4시간)";
+    else info=fmtLeaveDate(lvRange.start)+" · 시간차 "+lvStartSel.get()+"~"+lvEndSel.get()+"("+lvHourDur()+"시간)";
     $("lvInfo").textContent=info;
   }
   function renderLeave(){
@@ -1043,23 +1055,43 @@ function runApp(signal, created) {
     $("lvList").innerHTML=list.length?list.map(function(l){return '<div class="trashitem" data-id="'+l.id+'"><div class="ti-main"><div class="ti-title">'+esc(fmtLeaveDate(l.date))+'</div><div class="ti-sub">'+leaveLabel(l.hours)+' · '+l.hours+'시간</div></div><div class="ti-acts"><button class="btn-danger ti-btn" data-lvact="del">삭제</button></div></div>';}).join(""):'<div class="empty" style="padding:26px 10px"><p>사용한 연차가 없어요</p></div>';
   }
   function addLeave(){
-    if(!lvRange.start){toast("날짜를 선택하세요",true);$("lvRangeField").classList.add("err");return;}
+    if(!lvRange.start){toast("날짜를 선택하세요",true);return;}
     const dates=[];let d=new Date(lvRange.start+"T00:00:00");const end=new Date((lvRange.end||lvRange.start)+"T00:00:00");
     for(;d<=end;d.setDate(d.getDate()+1)){const iso=ymd(d);if(!isExcludedDay(iso))dates.push(iso);}
     if(!dates.length){toast("선택한 기간에 평일이 없어요",true);return;}
-    const multi=dates.length>1;const perDay=multi?8:lvCurHours();
+    const multi=dates.length>1;const perDay=multi?8:lvSingleHours();
     const map={};leaves.forEach(l=>{map[l.date]=Object.assign({},l);});
     dates.forEach(function(iso){map[iso]={id:(map[iso]&&map[iso].id)||uid(),date:iso,hours:perDay,created:(map[iso]&&map[iso].created)||Date.now()};});
     const arr=Object.keys(map).map(k=>map[k]);
     const byYear={};arr.forEach(l=>{const y=String(l.date).slice(0,4);byYear[y]=(byYear[y]||0)+l.hours;});
     for(const y in byYear){ if(byYear[y]>LEAVE_HOURS){toast(y+"년 연차 한도("+LEAVE_DAYS+"일)를 초과해요",true);return;} }
     leaves=arr.sort((a,b)=>a.date<b.date?-1:1);
-    saveLeaves();lvRange={start:null,end:null};paintLvRange();render();renderLeave();toast(dates.length+"일 연차를 추가했어요");
+    saveLeaves();lvRange={start:null,end:null};lvType="full";renderLvCal();paintLvControls();render();renderLeave();toast(dates.length+"일 연차를 신청했어요");
   }
   function delLeave(id){leaves=leaves.filter(l=>l.id!==id);saveLeaves();render();renderLeave();toast("연차를 취소했어요");}
-  function initLeaveTab(){lvRange={start:null,end:null};lvType="full";lvHourVal=2;document.querySelectorAll("#lvHourSel button").forEach(x=>x.classList.toggle("on",x.dataset.hh==="2"));paintLvRange();renderLeave();}
+  // 시간차: 2시간 단위 그리드(09·11·13·15 / 11·13·15·17)라 두 값 모두 그리드면 차이는 항상 2시간 배수. 끝<=시작/6시간 초과만 보정.
+  function lvSnapTimes(which){
+    let s=toMin(lvStartSel.get()),e=toMin(lvEndSel.get());
+    if(e<=s){ if(which==="start")e=s+120; else s=e-120; }
+    if(e-s>360){ if(which==="start")e=s+360; else s=e-360; }
+    lvStartSel.set(pad(Math.floor(s/60))+":"+pad(s%60));
+    lvEndSel.set(pad(Math.floor(e/60))+":"+pad(e%60));
+    paintLvControls();
+  }
+  function initLeaveTab(){
+    lvRange={start:null,end:null};lvType="full";
+    const now=new Date();lvCalY=now.getFullYear();lvCalM=now.getMonth();
+    if(!lvStartSel){
+      const startOpts=["09:00","11:00","13:00","15:00"].map(t=>({value:t,label:t}));
+      const endOpts=["11:00","13:00","15:00","17:00"].map(t=>({value:t,label:t}));
+      lvStartSel=makeSelect($("lvStartSel"),startOpts,"09:00",function(){lvSnapTimes("start");});
+      lvEndSel=makeSelect($("lvEndSel"),endOpts,"11:00",function(){lvSnapTimes("end");});
+    }
+    renderLvCal();paintLvControls();renderLeave();
+  }
   // ===== 마이페이지(계정·연차) =====
-  function paintMyAccount(){const h=$("mpUserHead");if(h&&currentUser)h.innerHTML='<div class="mp-uname">'+esc(dispName(currentUser))+'</div><div class="mp-umeta">'+esc(currentUser.team)+' · '+esc(currentUser.email||"")+'</div>';["mpCurPw","mpNewPw","mpNewPw2"].forEach(id=>{const el=$(id);if(el)el.value="";});const m=$("mpPwMsg");if(m){m.textContent="";m.className="mp-msg";}}
+  function paintMyAccount(){const h=$("mpUserHead");if(h&&currentUser)h.innerHTML='<div class="mp-uname">'+esc(dispName(currentUser))+'</div><div class="mp-umeta">'+esc(currentUser.team)+' · '+esc(currentUser.email||"")+'</div>';["mpCurPw","mpNewPw","mpNewPw2"].forEach(id=>{const el=$(id);if(el)el.value="";});const m=$("mpPwMsg");if(m){m.textContent="";m.className="mp-msg";}const f=$("mpPwForm");if(f)f.style.display="none";const o=$("mpOpenPw");if(o)o.style.display="flex";}
+  $("mpOpenPw").onclick=function(){$("mpPwForm").style.display="block";this.style.display="none";$("mpCurPw").focus();};
   function mpSelect(tab){document.querySelectorAll("#mpTabs .mp-tab").forEach(b=>b.classList.toggle("on",b.dataset.mt===tab));document.querySelectorAll("#myPageModal .mp-panel").forEach(p=>{p.style.display=p.dataset.mp===tab?"":"none";});if(tab==="leave")initLeaveTab();else paintMyAccount();}
   function openMyPage(tab){mpSelect(tab||"account");$("myPageModal").classList.add("open");}
   function closeMyPage(){$("myPageModal").classList.remove("open");}
@@ -1068,15 +1100,22 @@ function runApp(signal, created) {
   $("myPageModal").addEventListener("mousedown",function(e){if(e.target===$("myPageModal"))closeMyPage();});
   document.querySelectorAll("#mpTabs .mp-tab").forEach(function(b){b.onclick=function(){mpSelect(b.dataset.mt);};});
   $("mpLogout").onclick=async function(){try{await fetch("/api/auth/logout",{method:"POST"});}catch(e){}currentUser=null;tasks=[];mineTasks=[];trash=[];leaves=[];allUsers=[];viewTarget={type:"me"};readOnly=false;paintUser();render();closeMyPage();showAuth();$("liEmail").value="";$("liPw").value="";};
-  $("mpPwBtn").onclick=async function(){const cur=$("mpCurPw").value,np=$("mpNewPw").value,np2=$("mpNewPw2").value;const msg=$("mpPwMsg");function err(m){msg.textContent=m;msg.className="mp-msg err";}if(!cur||!np){err("현재·새 비밀번호를 입력하세요");return;}if(np.length<6){err("새 비밀번호는 6자 이상이어야 해요");return;}if(np!==np2){err("새 비밀번호가 일치하지 않아요");return;}$("mpPwBtn").disabled=true;try{const r=await fetch("/api/auth/password",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({currentPassword:cur,newPassword:np})});const j=await r.json();if(!r.ok){err(j.error||"변경 실패");return;}msg.textContent="비밀번호를 변경했어요";msg.className="mp-msg ok";["mpCurPw","mpNewPw","mpNewPw2"].forEach(id=>$(id).value="");}catch(e){err("네트워크 오류");}finally{$("mpPwBtn").disabled=false;}};
-  document.querySelectorAll("#lvType button").forEach(function(b){b.onclick=function(){if(b.classList.contains("dim"))return;lvType=b.dataset.t;paintLvControls();};});
-  document.querySelectorAll("#lvHourSel button").forEach(function(b){b.onclick=function(){lvHourVal=Number(b.dataset.hh);document.querySelectorAll("#lvHourSel button").forEach(x=>x.classList.toggle("on",x===b));paintLvControls();};});
-  $("lvRangeField").addEventListener("click",function(){$("lvRangeField").classList.remove("err");openCal($("lvRangeField"),lvRange,function(s,e){lvRange.start=s;lvRange.end=e;paintLvRange();},true);});
+  $("mpPwBtn").onclick=async function(){const cur=$("mpCurPw").value,np=$("mpNewPw").value,np2=$("mpNewPw2").value;const msg=$("mpPwMsg");function err(m){msg.textContent=m;msg.className="mp-msg err";}if(!cur||!np){err("현재·새 비밀번호를 입력하세요");return;}if(!pwAllOk(np,currentUser&&currentUser.email)){err("새 비밀번호가 보안 조건을 충족하지 않아요(영문·숫자·특수문자 10자 이상)");return;}if(np!==np2){err("새 비밀번호가 일치하지 않아요");return;}$("mpPwBtn").disabled=true;try{const r=await fetch("/api/auth/password",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({currentPassword:cur,newPassword:np})});const j=await r.json();if(!r.ok){err(j.error||"변경 실패");return;}msg.textContent="비밀번호를 변경했어요";msg.className="mp-msg ok";["mpCurPw","mpNewPw","mpNewPw2"].forEach(id=>$(id).value="");}catch(e){err("네트워크 오류");}finally{$("mpPwBtn").disabled=false;}};
+  document.querySelectorAll("#lvType button").forEach(function(b){b.onclick=function(){lvType=b.dataset.t;paintLvControls();};});
+  $("lvCal").addEventListener("click",function(e){
+    const nav=e.target.closest("[data-lvnav]");if(nav){lvCalM+=(+nav.dataset.lvnav);if(lvCalM<0){lvCalM=11;lvCalY--;}else if(lvCalM>11){lvCalM=0;lvCalY++;}renderLvCal();return;}
+    const cd=e.target.closest(".cd[data-d]");if(!cd||cd.classList.contains("empty"))return;
+    const iso=cd.dataset.d;
+    if(!lvRange.start||lvIsMulti()){lvRange.start=iso;lvRange.end=null;lvType="full";}
+    else{if(iso<lvRange.start){lvRange.end=lvRange.start;lvRange.start=iso;}else{lvRange.end=iso;}}
+    renderLvCal();paintLvControls();
+  });
   $("lvAddBtn").onclick=addLeave;
   $("lvList").addEventListener("click",function(e){const b=e.target.closest("[data-lvact]");if(!b)return;const host=b.closest("[data-id]");if(!host)return;const id=host.dataset.id;confirmAsk("이 연차를 삭제할까요?","사용 내역에서 제거됩니다.","삭제",function(){delLeave(id);});});
 
   /* 릴리즈 내역 */
   const CHANGELOG=[
+    {v:"1.1.24",items:["연차 신청 개편 — 모달에 달력을 바로 표시(버튼 팝업 제거)","유형 자동화: 같은 날 선택 시에만 하루종일·오전반차·오후반차·시간차 선택, 서로 다른 두 날은 그 기간만큼 일수 차감","시간차는 시작·종료 시간을 2시간 단위로 선택","계정 탭은 '비밀번호 변경하기'를 눌러야 변경 폼이 열리도록 변경"]},
     {v:"1.1.23",items:["새 항목 생성 시, 화면 밖이면 스크롤이 끝난 뒤에 등장 애니메이션을 재생하도록 개선(고정 지연 → 스크롤 종료 감지)"]},
     {v:"1.1.22",items:["할 일 생성·수정 애니메이션 전면 개편 — 화면을 가로지르던 칩 모션 제거, 애플식의 부드러운 등장(살짝 떠오르며 페이드+글로우)·수정 강조(가벼운 펄스)로 변경"]},
     {v:"1.1.21",items:["로그인·회원가입·아이디/비밀번호 찾기의 오류 안내를 토스트로 통일"]},

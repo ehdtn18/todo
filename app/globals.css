@@ -298,6 +298,20 @@ ul.list.cards .task{margin-bottom:0}
 .lv-hoursel button:hover{border-color:var(--g-weak)}
 .lv-hoursel button.on{border-color:var(--accent);color:var(--accent);background:var(--accent-bg)}
 .lv-info{margin-top:11px;font-size:13px;color:var(--soft);text-align:center;font-weight:600;font-variant-numeric:tabular-nums}
+/* 인라인 연차 달력 */
+.lvcal{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:12px 12px 8px;margin-top:4px}
+.lvcal .cal-grid{grid-auto-rows:34px}
+.lvcal .cd{height:34px}
+.lv-typewrap{margin-top:12px}
+.lv-hourrange{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:10px}
+.lhr-tf{display:inline-flex}
+.lhr-tf .csel{min-width:96px;justify-content:space-between}
+.lhr-sep{color:var(--soft);font-weight:700}
+/* 계정: 비밀번호 변경하기 버튼 → 폼 펼침 */
+.mp-openpw{display:flex;align-items:center;justify-content:space-between;width:100%;border:1px solid var(--line);background:var(--paper);color:var(--ink2);font-size:14px;font-weight:600;padding:13px 14px;border-radius:11px;cursor:pointer;transition:border-color .15s,background .15s}
+.mp-openpw:hover{border-color:var(--g-weak);background:var(--soft-bg)}
+.mp-openpw svg{color:var(--faint)}
+.mp-pwform{margin-top:2px}
 .lv-add{width:100%;margin-top:12px;padding:13px}
 @media(max-width:440px){ .lv-typeseg button{padding:7px 4px;font-size:12px} }
 
