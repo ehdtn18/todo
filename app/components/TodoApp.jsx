@@ -1022,7 +1022,8 @@ function runApp(signal, created) {
   function lvComplete(){return !!(lvRange.start&&lvRange.end);}
   function lvIsSingle(){return !!(lvRange.start&&lvRange.end&&lvRange.end===lvRange.start);}
   function lvIsMulti(){return !!(lvRange.start&&lvRange.end&&lvRange.end!==lvRange.start);}
-  function lvHourDur(){const s=toMin(lvStartSel?lvStartSel.get():"09:00"),e=toMin(lvEndSel?lvEndSel.get():"11:00");return Math.max(2,(e-s)/60);}
+  // 시간차: 점심 12:00~13:00 제외하고 시간 계산 (09~14=4h, 09~16=6h)
+  function lvHourDur(){const s=toMin(lvStartSel?lvStartSel.get():"09:00"),e=toMin(lvEndSel?lvEndSel.get():"11:00");const lunch=Math.max(0,Math.min(e,780)-Math.max(s,720));return Math.max(2,(e-s-lunch)/60);}
   function lvSingleHours(){if(lvType==="full")return 8;if(lvType==="am"||lvType==="pm")return 4;return lvHourDur();}
   function countLeaveDays(s,e){let d=new Date(s+"T00:00:00");const end=new Date((e||s)+"T00:00:00");let n=0;for(;d<=end;d.setDate(d.getDate()+1)){if(!isExcludedDay(ymd(d)))n++;}return n;}
   // 인라인 달력(모달 안에 그대로) — 클릭으로 범위 선택
@@ -1041,13 +1042,14 @@ function runApp(signal, created) {
     document.querySelectorAll("#lvType button").forEach(b=>b.classList.toggle("on",b.dataset.t===lvType));
     $("lvHourRange").style.display=(single&&lvType==="hour")?"flex":"none";
     const clr=$("lvClear");if(clr)clr.style.display=lvRange.start?"flex":"none";
+    const addBtn=$("lvAddBtn");if(addBtn)addBtn.disabled=!lvComplete();
     let info="";
     if(!lvRange.start)info="시작일을 선택해 주세요";
     else if(incomplete)info="종료일을 선택해 주세요";
     else if(multi){const n=countLeaveDays(lvRange.start,lvRange.end);info=fmtMD(lvRange.start)+" → "+fmtMD(lvRange.end)+" · "+n+"일 사용";}
     else if(lvType==="full")info=fmtLeaveDate(lvRange.start)+" · 하루 종일(8시간)";
-    else if(lvType==="am")info=fmtLeaveDate(lvRange.start)+" · 오전 반차(4시간)";
-    else if(lvType==="pm")info=fmtLeaveDate(lvRange.start)+" · 오후 반차(4시간)";
+    else if(lvType==="am")info=fmtLeaveDate(lvRange.start)+" · 오전 반차(09:00~14:00, 4시간)";
+    else if(lvType==="pm")info=fmtLeaveDate(lvRange.start)+" · 오후 반차(14:00~18:00, 4시간)";
     else info=fmtLeaveDate(lvRange.start)+" · 시간차 "+lvStartSel.get()+"~"+lvEndSel.get()+"("+lvHourDur()+"시간)";
     $("lvInfo").textContent=info;
   }
@@ -1055,7 +1057,7 @@ function runApp(signal, created) {
     const yr=leaveYear();const used=leaveUsed(yr);const rem=LEAVE_HOURS-used;
     $("lvYear").textContent="· "+yr+"년";
     $("lvSummary").innerHTML='<div class="lv-rem">남은 연차 <b>'+hToDays(rem)+'</b></div><div class="lv-sub">올해 사용 '+hToDays(used)+' · 총 '+LEAVE_DAYS+'일('+LEAVE_HOURS+'h)</div>';
-    const list=leaves.filter(l=>String(l.date).slice(0,4)===String(yr)).slice().sort((a,b)=>a.date<b.date?-1:1);
+    const list=leaves.filter(l=>String(l.date).slice(0,4)===String(yr)).slice().sort((a,b)=>a.date>b.date?-1:1);
     $("lvList").innerHTML=list.length?list.map(function(l){return '<div class="trashitem" data-id="'+l.id+'"><div class="ti-main"><div class="ti-title">'+esc(fmtLeaveDate(l.date))+'</div><div class="ti-sub">'+leaveLabel(l.hours)+' · '+l.hours+'시간</div></div><div class="ti-acts"><button class="btn-danger ti-btn" data-lvact="del">삭제</button></div></div>';}).join(""):'<div class="empty" style="padding:26px 10px"><p>사용한 연차가 없어요</p></div>';
   }
   function addLeave(){
@@ -1074,23 +1076,21 @@ function runApp(signal, created) {
     saveLeaves();lvRange={start:null,end:null};lvType="full";renderLvCal();paintLvControls();render();renderLeave();toast(dates.length+"일 연차를 신청했어요");
   }
   function delLeave(id){leaves=leaves.filter(l=>l.id!==id);saveLeaves();render();renderLeave();toast("연차를 취소했어요");}
-  // 시간차: 2시간 단위 그리드(09·11·13·15 / 11·13·15·17)라 두 값 모두 그리드면 차이는 항상 2시간 배수. 끝<=시작/6시간 초과만 보정.
-  function lvSnapTimes(which){
-    let s=toMin(lvStartSel.get()),e=toMin(lvEndSel.get());
-    if(e<=s){ if(which==="start")e=s+120; else s=e-120; }
-    if(e-s>360){ if(which==="start")e=s+360; else s=e-360; }
-    lvStartSel.set(pad(Math.floor(s/60))+":"+pad(s%60));
-    lvEndSel.set(pad(Math.floor(e/60))+":"+pad(e%60));
+  // 시간차 시간 그리드(점심 12~13 제외). 시작·종료 모두 그리드 값이라 끝<=시작만 보정.
+  const LV_START=["09:00","11:00","14:00","16:00"], LV_END=["11:00","14:00","16:00","18:00"];
+  function lvFixTimes(which){
+    const s=lvStartSel.get(),e=lvEndSel.get();
+    if(toMin(e)>toMin(s)){paintLvControls();return;}
+    if(which==="start"){const ne=LV_END.find(t=>toMin(t)>toMin(s));if(ne)lvEndSel.set(ne);}
+    else{const ns=LV_START.slice().reverse().find(t=>toMin(t)<toMin(e));if(ns)lvStartSel.set(ns);}
     paintLvControls();
   }
   function initLeaveTab(){
     lvRange={start:null,end:null};lvType="full";
     const now=new Date();lvCalY=now.getFullYear();lvCalM=now.getMonth();
     if(!lvStartSel){
-      const startOpts=["09:00","11:00","13:00","15:00"].map(t=>({value:t,label:t}));
-      const endOpts=["11:00","13:00","15:00","17:00"].map(t=>({value:t,label:t}));
-      lvStartSel=makeSelect($("lvStartSel"),startOpts,"09:00",function(){lvSnapTimes("start");});
-      lvEndSel=makeSelect($("lvEndSel"),endOpts,"11:00",function(){lvSnapTimes("end");});
+      lvStartSel=makeSelect($("lvStartSel"),LV_START.map(t=>({value:t,label:t})),"09:00",function(){lvFixTimes("start");});
+      lvEndSel=makeSelect($("lvEndSel"),LV_END.map(t=>({value:t,label:t})),"11:00",function(){lvFixTimes("end");});
     }
     renderLvCal();paintLvControls();renderLeave();
   }
@@ -1121,6 +1121,7 @@ function runApp(signal, created) {
 
   /* 릴리즈 내역 */
   const CHANGELOG=[
+    {v:"1.1.26",items:["연차 사용 내역을 최신 날짜순(위→아래)으로 정렬","날짜 선택 전에는 연차 신청 버튼 비활성화","시간차 시간 드롭다운을 09·11·14·16·18로 변경하고 점심(12~13시) 제외해 계산(09~14=4시간, 09~16=6시간)"]},
     {v:"1.1.25",items:["연차: 항상 두 번 클릭(시작일→종료일, 하루면 같은 날 두 번)으로 선택하도록 통일 + 한 번만 누르면 '종료일을 선택해 주세요' 안내","연차 달력에 '선택 취소' 버튼 추가"]},
     {v:"1.1.24",items:["연차 신청 개편 — 모달에 달력을 바로 표시(버튼 팝업 제거)","유형 자동화: 같은 날 선택 시에만 하루종일·오전반차·오후반차·시간차 선택, 서로 다른 두 날은 그 기간만큼 일수 차감","시간차는 시작·종료 시간을 2시간 단위로 선택","계정 탭은 '비밀번호 변경하기'를 눌러야 변경 폼이 열리도록 변경"]},
     {v:"1.1.23",items:["새 항목 생성 시, 화면 밖이면 스크롤이 끝난 뒤에 등장 애니메이션을 재생하도록 개선(고정 지연 → 스크롤 종료 감지)"]},

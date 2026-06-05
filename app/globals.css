@@ -315,6 +315,8 @@ ul.list.cards .task{margin-bottom:0}
 .mp-openpw svg{color:var(--faint)}
 .mp-pwform{margin-top:2px}
 .lv-add{width:100%;margin-top:12px;padding:13px}
+.lv-add:disabled{opacity:.45;cursor:default}
+.lv-add:disabled:hover{filter:none}
 @media(max-width:440px){ .lv-typeseg button{padding:7px 4px;font-size:12px} }
 
 /* 기간 팝업에서 시간 숨김(연차용) */
