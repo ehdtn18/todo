@@ -1011,7 +1011,7 @@ function runApp(signal, created) {
   $("resetBtn").onclick=function(){$("resetModal").classList.add("open");};
   $("rsCancel").onclick=function(){$("resetModal").classList.remove("open");};
   $("rsOk").onclick=function(){clearComposer();$("resetModal").classList.remove("open");toast("작성 내용을 초기화했어요");};
-  $("resetModal").addEventListener("mousedown",function(e){if(e.target===$("resetModal"))$("resetModal").classList.remove("open");});
+  // 모달은 바깥(배경) 클릭으로 닫히지 않음 — 작업 내용 유실 방지(사용자 요청)
 
   function toggle(id){if(readOnly){toast("보기 전용이에요 — 내 할일에서만 바꿀 수 있어요",true);return;}const x=tasks.find(t=>t.id===id);if(x){x.done=!x.done;save();render();}}
 
@@ -1029,7 +1029,6 @@ function runApp(signal, created) {
   $("trashBtn").onclick=openTrash;
   $("tmClose").onclick=closeTrash;$("tmDone").onclick=closeTrash;
   $("trashEmpty").onclick=function(){if(!trash.length){toast("휴지통이 비어 있어요");return;}trash=[];saveTrash();render();renderTrash();toast("휴지통을 비웠어요");};
-  $("trashModal").addEventListener("mousedown",function(e){if(e.target===$("trashModal"))closeTrash();});
   $("trashList").addEventListener("click",function(e){const b=e.target.closest("[data-tact]");if(!b)return;const host=b.closest("[data-id]");if(!host)return;const id=host.dataset.id;if(b.dataset.tact==="restore")restoreTrash(id);else permDelete(id);});
 
   /* 연차 (annual leave) — 연 15일(120h), 2시간 단위, 주말·공휴일 제외 */
@@ -1125,7 +1124,6 @@ function runApp(signal, created) {
   function closeMyPage(){$("myPageModal").classList.remove("open");}
   $("userChip").onclick=function(){if(!currentUser)return;openMyPage("account");};
   $("mpClose").onclick=closeMyPage;
-  $("myPageModal").addEventListener("mousedown",function(e){if(e.target===$("myPageModal"))closeMyPage();});
   document.querySelectorAll("#mpTabs .mp-tab").forEach(function(b){b.onclick=function(){mpSelect(b.dataset.mt);};});
   $("mpLogout").onclick=async function(){try{await fetch("/api/auth/logout",{method:"POST"});}catch(e){}currentUser=null;tasks=[];mineTasks=[];trash=[];leaves=[];allUsers=[];viewTarget={type:"me"};readOnly=false;paintUser();render();closeMyPage();showAuth();$("liEmail").value="";$("liPw").value="";};
   $("mpPwBtn").onclick=async function(){const cur=$("mpCurPw").value,np=$("mpNewPw").value,np2=$("mpNewPw2").value;const msg=$("mpPwMsg");function err(m){msg.textContent=m;msg.className="mp-msg err";}if(!cur||!np){err("현재·새 비밀번호를 입력하세요");return;}if(!pwAllOk(np,currentUser&&currentUser.email)){err("새 비밀번호가 보안 조건을 충족하지 않아요(영문·숫자·특수문자 10자 이상)");return;}if(np!==np2){err("새 비밀번호가 일치하지 않아요");return;}$("mpPwBtn").disabled=true;try{const r=await fetch("/api/auth/password",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({currentPassword:cur,newPassword:np})});const j=await r.json();if(!r.ok){err(j.error||"변경 실패");return;}msg.textContent="비밀번호를 변경했어요";msg.className="mp-msg ok";["mpCurPw","mpNewPw","mpNewPw2"].forEach(id=>$(id).value="");}catch(e){err("네트워크 오류");}finally{$("mpPwBtn").disabled=false;}};
@@ -1144,6 +1142,7 @@ function runApp(signal, created) {
 
   /* 릴리즈 내역 */
   const CHANGELOG=[
+    {v:"1.1.31",items:["모든 모달이 바깥(배경) 클릭으로 닫히지 않도록 변경 — 작업 중 실수로 닫혀 내용이 사라지는 문제 방지(닫기 버튼/취소로만 닫힘)"]},
     {v:"1.1.30",items:["Ctrl/Cmd+F를 누르면 브라우저 찾기 대신 앱 검색창이 바로 열리도록"]},
     {v:"1.1.29",items:["대시보드 '진행 현황' 위계 정리 — 진행 중(파랑)·완료(회색)·전체(구분선) 구조로 명확하게","우선순위·상태 막대를 파란색/회색 위계로 정리(높음·진행 중=파랑)","리스트 검색 버튼을 맨 오른쪽으로 이동","달력에도 검색 추가"]},
     {v:"1.1.28",items:["n차 컨펌: 날짜 부분에서 Backspace 시 날짜만 통째로 지우고(메모는 유지) 다시 입력 가능","리스트 미리보기에도 번호 계층(1, 1-1, 1-1-1) 적용","에디터 실행 취소(Ctrl+Z)·다시 실행(Ctrl+Shift+Z / Ctrl+Y) 추가 — 최대 50단계 기억"]},
@@ -1208,7 +1207,6 @@ function runApp(signal, created) {
   function openRel(){renderRel();$("relModal").classList.add("open");}
   function closeRel(){$("relModal").classList.remove("open");}
   $("relBtn").onclick=openRel;$("relClose").onclick=closeRel;$("relDone").onclick=closeRel;
-  $("relModal").addEventListener("mousedown",function(e){if(e.target===$("relModal"))closeRel();});
   $("verLabel").textContent="v"+APP_VERSION;
 
   /* 알림 (notification) — 마감 N분 전 브라우저 알림 + 인앱 알림 센터 */
@@ -1231,7 +1229,6 @@ function runApp(signal, created) {
   $("bellBtn").onclick=openNoti;
   $("nmClose").onclick=closeNoti;$("nmDone").onclick=closeNoti;
   $("notiClear").onclick=function(){notiflog=[];saveNotiflog();renderNoti();paintBell();};
-  $("notiModal").addEventListener("mousedown",function(e){if(e.target===$("notiModal"))closeNoti();});
   function findTaskEl(id){return $("view").querySelector('[data-id="'+id+'"]');}
   function scrollHi(el){el.scrollIntoView({behavior:"smooth",block:"center"});el.classList.add("hlflash");setTimeout(function(){el.classList.remove("hlflash");},1700);}
   function focusTask(id){
@@ -1255,7 +1252,6 @@ function runApp(signal, created) {
   function askDelete(id){confirmAsk("휴지통으로 보낼까요?","휴지통에서 복원하거나 영구 삭제할 수 있어요.","휴지통으로",function(){del(id);toast("휴지통으로 옮겼어요");});}
   $("cfOk").onclick=function(){const fn=pendingConfirm;closeConfirm();if(fn)fn();};
   $("cfCancel").onclick=closeConfirm;
-  $("confirmModal").addEventListener("mousedown",function(e){if(e.target===$("confirmModal"))closeConfirm();});
 
   /* edit modal */
   const mEditor=EditorFactory($("emEditor"),$("emSlash"),$("editModal").querySelector(".sheet"));
@@ -1292,7 +1288,6 @@ function runApp(signal, created) {
     toast(anyChanged?"수정 내용을 저장했어요":"변경사항이 없습니다");
   }
   $("emSave").onclick=saveEdit;$("emCancel").onclick=closeEdit;$("emClose").onclick=closeEdit;
-  $("editModal").addEventListener("mousedown",function(e){if(e.target===$("editModal"))closeEdit();});
   $("emLogBtn").onclick=function(){if(editingId)openLog(editingId);};
 
   /* log modal */
@@ -1328,7 +1323,7 @@ function runApp(signal, created) {
     save();render();logSel=0;renderLog();toast("선택한 버전으로 롤백했어요");
   }
   $("logModal").addEventListener("click",function(e){const item=e.target.closest(".logitem");if(item){logSel=+item.dataset.i;renderLog();return;}if(e.target.closest("#logRollback")){doRollback();return;}});
-  $("lmClose").onclick=closeLog;$("logModal").addEventListener("mousedown",function(e){if(e.target===$("logModal"))closeLog();});
+  $("lmClose").onclick=closeLog;
 
   document.addEventListener("keydown",function(e){if(e.key==="Escape"){if($("helpModal").classList.contains("open"))$("helpModal").classList.remove("open");else if($("resetModal").classList.contains("open"))$("resetModal").classList.remove("open");else if($("relModal").classList.contains("open"))closeRel();else if($("myPageModal").classList.contains("open"))closeMyPage();else if($("notiModal").classList.contains("open"))closeNoti();else if($("trashModal").classList.contains("open"))closeTrash();else if($("confirmModal").classList.contains("open"))closeConfirm();else if($("logModal").classList.contains("open"))closeLog();else if($("editModal").classList.contains("open"))closeEdit();}},{signal});
 
@@ -1348,7 +1343,6 @@ function runApp(signal, created) {
   document.querySelectorAll(".fhelp").forEach(function(b){b.onclick=function(e){e.preventDefault();e.stopPropagation();const tip=b.querySelector(".fhelp-tip");$("hmTitle").textContent=b.dataset.help||"도움말";$("hmBody").textContent=tip?tip.textContent:"";$("helpModal").classList.add("open");};});
   $("hmClose").onclick=function(){$("helpModal").classList.remove("open");};
   $("hmDone").onclick=function(){$("helpModal").classList.remove("open");};
-  $("helpModal").addEventListener("mousedown",function(e){if(e.target===$("helpModal"))$("helpModal").classList.remove("open");});
 
   // 레이아웃 토글/정렬 표시 동기화 (DB 설정 로드 후 등)
   function syncLayoutToggles(){
