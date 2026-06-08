@@ -736,7 +736,7 @@ function runApp(signal, created) {
     editorEl.addEventListener("compositionstart",function(){composing=true;});
     editorEl.addEventListener("compositionend",function(){composing=false;});
     // 붙여넣기: 서식 깨짐 방지 — 일반 텍스트로만 삽입
-    editorEl.addEventListener("paste",function(e){const cd=e.clipboardData||window.clipboardData;if(!cd)return;e.preventDefault();const text=cd.getData("text/plain");const sel=window.getSelection();if(sel&&!sel.isCollapsed)document.execCommand("delete");document.execCommand("insertText",false,text);});
+    editorEl.addEventListener("paste",function(e){const cd=e.clipboardData||window.clipboardData;if(!cd)return;e.preventDefault();const text=(cd.getData("text/plain")||"").replace(/\r/g,"");if(!text)return;const cur=currentBlock();const plainTarget=cur&&(cur.dataset.type==="confirm"||cur.classList.contains("codeblock")||cur.classList.contains("tableblock"));const looksMd=text.indexOf("\n")>=0||/^(\s*[-*]\s|\s*\d+\.\s|#{1,4}\s|>\s|\s*-\s*\[[ xX]\]\s)/.test(text);if(plainTarget||!looksMd){const sel=window.getSelection();if(sel&&!sel.isCollapsed)document.execCommand("delete");document.execCommand("insertText",false,text);return;}const blocks=mdToBlocks(text);if(!blocks.length){document.execCommand("insertText",false,text);return;}insertBlocksAtCaret(blocks);});
     editorEl.addEventListener("keydown",function(e){
       if(composing||e.isComposing||e.keyCode===229)return;
       if(menuOpen){if(e.key==="ArrowDown"){e.preventDefault();moveActive(1);return;}if(e.key==="ArrowUp"){e.preventDefault();moveActive(-1);return;}if(e.key==="Enter"||e.key==="Tab"){e.preventDefault();chooseActive();return;}if(e.key==="Escape"){e.preventDefault();hideMenu();return;}}
@@ -804,6 +804,45 @@ function runApp(signal, created) {
         const md=inlineToMd(node).replace(/ /g," ").replace(/\s+$/,"");if(md.trim())out.push(md);
       });
       return out.join("\n").replace(/\n{3,}/g,"\n\n").replace(/^\n+|\n+$/g,"").trim();
+    }
+    // 마크다운 텍스트 → 블록 엘리먼트 배열 (붙여넣기 변환용; loadMarkdown과 동일 규칙)
+    function mdToBlocks(md){
+      const L=md.replace(/\r/g,"").split("\n");const out=[];let i=0,m;
+      function mk(type,inner,checked,indent){const b=newBlk(type);if(checked)b.dataset.checked="true";if(indent){b.dataset.indent=String(indent);b.style.marginLeft=(indent*22)+"px";}b.innerHTML=inner&&inner.length?inner:"<br>";if(type==="confirm"&&inner&&inner.length)b.classList.remove("ph");out.push(b);}
+      function lvl(sp){return Math.min(4,Math.floor((sp||"").length/2));}
+      while(i<L.length){const line=L[i];
+        if(/^```/.test(line)){const code=[];i++;while(i<L.length&&!/^```/.test(L[i])){code.push(L[i]);i++;}if(i<L.length)i++;const cb=document.createElement("div");cb.className="blk codeblock";cb.dataset.type="code";cb.textContent=code.join("\n");out.push(cb);continue;}
+        if(/^(---|\*\*\*|___)\s*$/.test(line)){const dv=document.createElement("div");dv.className="blk divider";dv.contentEditable="false";dv.innerHTML="<hr>";out.push(dv);i++;continue;}
+        if(m=line.match(/^!\[[^\]]*\]\(([^)]+)\)\s*$/)){out.push(mediaEl("image",m[1],""));i++;continue;}
+        if(m=line.match(/^<!--video-->(.+)$/)){out.push(mediaEl("video",m[1].trim(),""));i++;continue;}
+        if(m=line.match(/^<!--file:([^>]*)-->(.+)$/)){out.push(mediaEl("file",m[2].trim(),m[1]||"파일"));i++;continue;}
+        if(m=line.match(/^<!--callout-->(.*)$/)){mk("callout",inlineMd(m[1]));i++;continue;}
+        if(m=line.match(/^<!--toggle-->(.*)$/)){mk("toggle",inlineMd(m[1]));i++;continue;}
+        if(m=line.match(/^<!--cf([01])-->(.*)$/)){mk("confirm",inlineMd(m[2]),m[1]==="1");i++;continue;}
+        if(/^\s*$/.test(line)){i++;continue;}
+        if(m=line.match(/^(#{1,4})\s+(.*)$/)){mk("h"+m[1].length,inlineMd(m[2]));i++;continue;}
+        if(m=line.match(/^(\s*)-\s*\[([ xX])\]\s+(.*)$/)){mk("todo",inlineMd(m[3]),m[2].toLowerCase()==="x",lvl(m[1]));i++;continue;}
+        if(/^>\s?/.test(line)){mk("quote",inlineMd(line.replace(/^>\s?/,"")));i++;continue;}
+        if(/^\s*\|.*\|\s*$/.test(line)&&i+1<L.length&&/^\s*\|[-:\s|]+\|\s*$/.test(L[i+1])){const head=splitRow(line);i+=2;const body=[];while(i<L.length&&/^\s*\|.*\|\s*$/.test(L[i])){body.push(splitRow(L[i]));i++;}out.push(tableEl([head].concat(body)));continue;}
+        if(m=line.match(/^(\s*)[-*]\s+(.*)$/)){mk("ul",inlineMd(m[2]),false,lvl(m[1]));i++;continue;}
+        if(m=line.match(/^(\s*)\d+\.\s+(.*)$/)){mk("ol",inlineMd(m[2]),false,lvl(m[1]));i++;continue;}
+        mk("p",inlineMd(line));i++;
+      }
+      return out;
+    }
+    // 붙여넣은 블록들을 현재 캐럿 위치에 삽입(앞은 유지, 뒤는 분리)
+    function insertBlocksAtCaret(blocks){
+      if(typeof histRecord==="function")histRecord();
+      const sel0=window.getSelection();if(sel0&&!sel0.isCollapsed)document.execCommand("delete");
+      let cur=currentBlock();
+      if(!cur){const p=newBlk("p");editorEl.appendChild(p);placeCaret(p,true);cur=p;}
+      let tailFrag=null;const s=window.getSelection();
+      if(s&&s.rangeCount&&!cur.classList.contains("codeblock")&&!cur.classList.contains("tableblock")){const r=s.getRangeAt(0).cloneRange();r.setEnd(cur,cur.childNodes.length);tailFrag=r.extractContents();}
+      let anchor=cur;
+      blocks.forEach(function(b){anchor.after(b);anchor=b;});
+      if(tailFrag&&(tailFrag.textContent||"").trim()!==""){const tb=newBlk(cur.dataset.type||"p");if(cur.dataset.indent){tb.dataset.indent=cur.dataset.indent;tb.style.marginLeft=cur.style.marginLeft;}tb.innerHTML="";tb.appendChild(tailFrag);if(!tb.firstChild)tb.innerHTML="<br>";anchor.after(tb);}
+      if(!(cur.textContent||"").trim()&&(!cur.dataset.type||cur.dataset.type==="p"))cur.remove();
+      placeCaret(anchor,false);renumber();updateEmpty();if(typeof histRecord==="function")histRecord();
     }
     function loadMarkdown(md){editorEl.innerHTML="";if(!md||!md.trim()){editorEl.appendChild(newBlk("p"));updateEmpty();return;}const L=md.replace(/\r/g,"").split("\n");let i=0,m;function add(type,inner,checked,indent){const b=newBlk(type);if(checked)b.dataset.checked="true";if(indent){b.dataset.indent=String(indent);b.style.marginLeft=(indent*22)+"px";}b.innerHTML=inner&&inner.length?inner:"<br>";if(type==="confirm"&&inner&&inner.length)b.classList.remove("ph");editorEl.appendChild(b);}function lvl(sp){return Math.min(4,Math.floor((sp||"").length/2));}while(i<L.length){const line=L[i];
       if(/^```/.test(line)){const code=[];i++;while(i<L.length&&!/^```/.test(L[i])){code.push(L[i]);i++;}if(i<L.length)i++;const cb=document.createElement("div");cb.className="blk codeblock";cb.dataset.type="code";cb.textContent=code.join("\n");editorEl.appendChild(cb);continue;}
@@ -1142,6 +1181,7 @@ function runApp(signal, created) {
 
   /* 릴리즈 내역 */
   const CHANGELOG=[
+    {v:"1.1.32",items:["에디터에 마크다운 텍스트를 붙여넣으면 글머리·번호·제목·체크리스트 등 블록으로 자동 변환(들여쓰기 포함)"]},
     {v:"1.1.31",items:["모든 모달이 바깥(배경) 클릭으로 닫히지 않도록 변경 — 작업 중 실수로 닫혀 내용이 사라지는 문제 방지(닫기 버튼/취소로만 닫힘)"]},
     {v:"1.1.30",items:["Ctrl/Cmd+F를 누르면 브라우저 찾기 대신 앱 검색창이 바로 열리도록"]},
     {v:"1.1.29",items:["대시보드 '진행 현황' 위계 정리 — 진행 중(파랑)·완료(회색)·전체(구분선) 구조로 명확하게","우선순위·상태 막대를 파란색/회색 위계로 정리(높음·진행 중=파랑)","리스트 검색 버튼을 맨 오른쪽으로 이동","달력에도 검색 추가"]},
