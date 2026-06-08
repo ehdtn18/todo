@@ -1144,6 +1144,7 @@ function runApp(signal, created) {
 
   /* 릴리즈 내역 */
   const CHANGELOG=[
+    {v:"1.1.30",items:["Ctrl/Cmd+F를 누르면 브라우저 찾기 대신 앱 검색창이 바로 열리도록"]},
     {v:"1.1.29",items:["대시보드 '진행 현황' 위계 정리 — 진행 중(파랑)·완료(회색)·전체(구분선) 구조로 명확하게","우선순위·상태 막대를 파란색/회색 위계로 정리(높음·진행 중=파랑)","리스트 검색 버튼을 맨 오른쪽으로 이동","달력에도 검색 추가"]},
     {v:"1.1.28",items:["n차 컨펌: 날짜 부분에서 Backspace 시 날짜만 통째로 지우고(메모는 유지) 다시 입력 가능","리스트 미리보기에도 번호 계층(1, 1-1, 1-1-1) 적용","에디터 실행 취소(Ctrl+Z)·다시 실행(Ctrl+Shift+Z / Ctrl+Y) 추가 — 최대 50단계 기억"]},
     {v:"1.1.27",items:["에디터: 목록·글머리 항목 중간에서 Enter 시 문장이 커서 기준으로 쪼개져 새 항목으로 넘어가도록 수정","번호 목록 들여쓰기 시 1 → 1-1 → 1-1-1 계층 번호 표시","글머리·번호 목록 들여쓰기를 최대 5단계로 제한"]},
@@ -1392,6 +1393,8 @@ function runApp(signal, created) {
   $("searchClear").onclick=function(e){e.stopPropagation();const inp=$("searchInput");inp.value="";searchQ="";this.style.display="none";inp.focus();render();};
   $("searchInput").addEventListener("keydown",function(e){if(e.key==="Escape"){closeSearch();}});
   $("searchInput").addEventListener("blur",function(){if(!this.value.trim())$("searchWrap").classList.remove("open");});
+  // Ctrl/Cmd+F: 브라우저 찾기 대신 인라인 검색 input 열기(검색 가능한 화면이고 모달이 없을 때만)
+  document.addEventListener("keydown",function(e){if((e.ctrlKey||e.metaKey)&&!e.shiftKey&&!e.altKey&&(e.key==="f"||e.key==="F")){if(currentUser&&$("searchWrap").style.display!=="none"&&!document.querySelector(".overlay.open")){e.preventDefault();if(searchOpen())$("searchInput").focus();else openSearch();}}},{signal});
   function calShift(dir){const d=new Date((calRef||todayISO())+"T00:00:00");if(calMode==="month")d.setMonth(d.getMonth()+dir);else if(calMode==="week")d.setDate(d.getDate()+dir*7);else d.setDate(d.getDate()+dir);calRef=ymd(d);}
   $("calNav").addEventListener("click",function(e){const b=e.target.closest("[data-cn]");if(b){calShift(+b.dataset.cn);render();}});
   function updateControls(){
