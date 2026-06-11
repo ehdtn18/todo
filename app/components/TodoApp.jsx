@@ -1181,6 +1181,7 @@ function runApp(signal, created) {
 
   /* 릴리즈 내역 */
   const CHANGELOG=[
+    {v:"1.1.34",items:["지난 날짜(어제 이하) 알림은 자동 삭제하고 오늘 알림만 유지 — 같은 업무가 날짜별로 반복돼도 어제 건 사라지고 오늘 건만 표시"]},
     {v:"1.1.33",items:["n차 컨펌 날짜가 되면 알림 발생(완료된 컨펌 제외, 알림 시각·켜짐 설정 따름)"]},
     {v:"1.1.32",items:["에디터에 마크다운 텍스트를 붙여넣으면 글머리·번호·제목·체크리스트 등 블록으로 자동 변환(들여쓰기 포함)"]},
     {v:"1.1.31",items:["모든 모달이 바깥(배경) 클릭으로 닫히지 않도록 변경 — 작업 중 실수로 닫혀 내용이 사라지는 문제 방지(닫기 버튼/취소로만 닫힘)"]},
@@ -1264,7 +1265,9 @@ function runApp(signal, created) {
   function pushNoti(t,sub,emoji){notiflog.unshift({nid:uid(),taskId:t.id,title:t.title||"(제목 없음)",sub:sub,emoji:emoji||"⏰",at:Date.now(),seen:false});if(notiflog.length>50)notiflog.length=50;saveNotiflog();paintBell();try{if(typeof Notification!=="undefined"&&Notification.permission==="granted")new Notification((emoji||"⏰")+" "+(t.title||"할 일"),{body:sub});}catch(e){}}
   function fireNoti(t){pushNoti(t,"마감일 알림 · "+(labelRangeT(t.start,t.end,t.startTime,t.endTime)||""),"⏰");}
   function fireConfirmNoti(t,cf,n){pushNoti(t,n+"차 컨펌일 · "+fmtMD(cf.date),"✅");}
-  function checkNoti(){const now=Date.now(),W=12*3600*1000;tasks.forEach(function(t){if(t.done||t.notify===false)return;
+  // 오늘 0시 이전(어제 이하)에 뜬 알림은 자동 삭제 — 오늘 것만 남김
+  function pruneNoti(){const m=new Date();m.setHours(0,0,0,0);const start=m.getTime();const before=notiflog.length;notiflog=notiflog.filter(function(x){return (x.at||0)>=start;});if(notiflog.length!==before){saveNotiflog();paintBell();if($("notiModal")&&$("notiModal").classList.contains("open"))renderNoti();}}
+  function checkNoti(){pruneNoti();const now=Date.now(),W=12*3600*1000;tasks.forEach(function(t){if(t.done||t.notify===false)return;
     if(t.end){const fa=taskFireAt(t);if(fa!=null){const key=t.id+"@"+fa;if(fa<=now&&(now-fa)<W&&!notiFired[key]){notiFired[key]=1;saveFired();fireNoti(t);}}}
     taskConfirms(t).forEach(function(cf,ci){if(cf.done)return;const dt=new Date(cf.date+"T"+(t.notifyTime||"09:00")+":00");const fa=dt.getTime();if(isNaN(fa))return;const key=t.id+"@cf@"+cf.date;if(fa<=now&&(now-fa)<W&&!notiFired[key]){notiFired[key]=1;saveFired();fireConfirmNoti(t,cf,ci+1);}});
   });}
