@@ -1181,6 +1181,7 @@ function runApp(signal, created) {
 
   /* 릴리즈 내역 */
   const CHANGELOG=[
+    {v:"1.1.35",items:["알림 아이콘(⏰·✅) 제거 — (1차)·(2차)…·(완료) 텍스트 배지로 표시"]},
     {v:"1.1.34",items:["지난 날짜(어제 이하) 알림은 자동 삭제하고 오늘 알림만 유지 — 같은 업무가 날짜별로 반복돼도 어제 건 사라지고 오늘 건만 표시"]},
     {v:"1.1.33",items:["n차 컨펌 날짜가 되면 알림 발생(완료된 컨펌 제외, 알림 시각·켜짐 설정 따름)"]},
     {v:"1.1.32",items:["에디터에 마크다운 텍스트를 붙여넣으면 글머리·번호·제목·체크리스트 등 블록으로 자동 변환(들여쓰기 포함)"]},
@@ -1262,16 +1263,16 @@ function runApp(signal, created) {
   function leadTxt(m){m=Number(m)||0;return m===0?"정시":m>=1440?"1일 전":m>=60?(m/60)+"시간 전":m+"분 전";}
   function paintBell(){const n=notiflog.filter(x=>!x.seen).length;const b=$("bellCount");if(!b)return;if(n>0){b.style.display="";b.textContent=n>99?"99+":n;}else b.style.display="none";}
   function taskFireAt(t){if(!t.end)return null;const dt=new Date(t.end+"T"+(t.notifyTime||"09:00")+":00");if(isNaN(dt.getTime()))return null;return dt.getTime();}
-  function pushNoti(t,sub,emoji){notiflog.unshift({nid:uid(),taskId:t.id,title:t.title||"(제목 없음)",sub:sub,emoji:emoji||"⏰",at:Date.now(),seen:false});if(notiflog.length>50)notiflog.length=50;saveNotiflog();paintBell();try{if(typeof Notification!=="undefined"&&Notification.permission==="granted")new Notification((emoji||"⏰")+" "+(t.title||"할 일"),{body:sub});}catch(e){}}
-  function fireNoti(t){pushNoti(t,"마감일 알림 · "+(labelRangeT(t.start,t.end,t.startTime,t.endTime)||""),"⏰");}
-  function fireConfirmNoti(t,cf,n){pushNoti(t,n+"차 컨펌일 · "+fmtMD(cf.date),"✅");}
+  function pushNoti(t,sub,tag){notiflog.unshift({nid:uid(),taskId:t.id,title:t.title||"(제목 없음)",sub:sub,tag:tag||"",at:Date.now(),seen:false});if(notiflog.length>50)notiflog.length=50;saveNotiflog();paintBell();try{if(typeof Notification!=="undefined"&&Notification.permission==="granted")new Notification((tag?"("+tag+") ":"")+(t.title||"할 일"),{body:sub});}catch(e){}}
+  function fireNoti(t){pushNoti(t,"마감일 알림 · "+(labelRangeT(t.start,t.end,t.startTime,t.endTime)||""),"완료");}
+  function fireConfirmNoti(t,cf,n){pushNoti(t,n+"차 컨펌일 · "+fmtMD(cf.date),n+"차");}
   // 오늘 0시 이전(어제 이하)에 뜬 알림은 자동 삭제 — 오늘 것만 남김
   function pruneNoti(){const m=new Date();m.setHours(0,0,0,0);const start=m.getTime();const before=notiflog.length;notiflog=notiflog.filter(function(x){return (x.at||0)>=start;});if(notiflog.length!==before){saveNotiflog();paintBell();if($("notiModal")&&$("notiModal").classList.contains("open"))renderNoti();}}
   function checkNoti(){pruneNoti();const now=Date.now(),W=12*3600*1000;tasks.forEach(function(t){if(t.done||t.notify===false)return;
     if(t.end){const fa=taskFireAt(t);if(fa!=null){const key=t.id+"@"+fa;if(fa<=now&&(now-fa)<W&&!notiFired[key]){notiFired[key]=1;saveFired();fireNoti(t);}}}
     taskConfirms(t).forEach(function(cf,ci){if(cf.done)return;const dt=new Date(cf.date+"T"+(t.notifyTime||"09:00")+":00");const fa=dt.getTime();if(isNaN(fa))return;const key=t.id+"@cf@"+cf.date;if(fa<=now&&(now-fa)<W&&!notiFired[key]){notiFired[key]=1;saveFired();fireConfirmNoti(t,cf,ci+1);}});
   });}
-  function renderNoti(){if(!notiflog.length){$("notiList").innerHTML='<div class="empty" style="padding:30px 10px"><p>알림이 없어요</p></div>';return;}$("notiList").innerHTML=notiflog.map(function(x,i){const d=new Date(x.at);const ts=(d.getMonth()+1)+"/"+d.getDate()+" "+pad(d.getHours())+":"+pad(d.getMinutes());return '<div class="trashitem noti'+(x.seen?"":" unseen")+'" data-tid="'+esc(x.taskId)+'"><div class="ti-main"><div class="ti-title">'+(x.emoji||"⏰")+' '+esc(x.title)+'</div><div class="ti-sub">'+esc(x.sub)+' · '+ts+'</div></div><div class="ti-acts"><button class="iconbtn ndel" data-ndel="'+i+'" title="알림 삭제" aria-label="알림 삭제"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div></div>';}).join("");}
+  function renderNoti(){if(!notiflog.length){$("notiList").innerHTML='<div class="empty" style="padding:30px 10px"><p>알림이 없어요</p></div>';return;}$("notiList").innerHTML=notiflog.map(function(x,i){const d=new Date(x.at);const ts=(d.getMonth()+1)+"/"+d.getDate()+" "+pad(d.getHours())+":"+pad(d.getMinutes());return '<div class="trashitem noti'+(x.seen?"":" unseen")+'" data-tid="'+esc(x.taskId)+'"><div class="ti-main"><div class="ti-title">'+(x.tag?'<span class="noti-tag'+(x.tag==="완료"?" done":"")+'">'+esc(x.tag)+'</span>':"")+esc(x.title)+'</div><div class="ti-sub">'+esc(x.sub)+' · '+ts+'</div></div><div class="ti-acts"><button class="iconbtn ndel" data-ndel="'+i+'" title="알림 삭제" aria-label="알림 삭제"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div></div>';}).join("");}
   function delNoti(i){if(i<0||i>=notiflog.length)return;notiflog.splice(i,1);saveNotiflog();renderNoti();paintBell();}
   function openNoti(){requestNotiPerm();renderNoti();$("notiModal").classList.add("open");notiflog.forEach(function(x){x.seen=true;});saveNotiflog();paintBell();}
   function closeNoti(){$("notiModal").classList.remove("open");}

@@ -830,6 +830,8 @@ header{animation:fadeUp .28s var(--ease)}
 .task.clickable .check,.task.clickable .acts .iconbtn,.task.clickable .cardmore,.task.clickable .edited{cursor:pointer}
 
 /* 알림 센터 항목 강조 */
+.noti-tag{display:inline-block;font-size:11px;font-weight:700;line-height:1.5;color:var(--accent);background:var(--accent-bg);border-radius:6px;padding:1px 7px;margin-right:7px;vertical-align:middle}
+.noti-tag.done{color:var(--ink2);background:var(--chip)}
 .trashitem.noti{cursor:pointer;transition:border-color .15s,transform .1s var(--ease)}
 .trashitem.noti:hover{border-color:var(--g-weak);transform:translateX(2px)}
 .trashitem.noti.unseen{border-color:var(--accent);background:var(--accent-bg)}
