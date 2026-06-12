@@ -621,6 +621,17 @@ function runApp(signal, created) {
     html+="</li>";while(stack.length){html+=closeTag(stack.pop());if(stack.length)html+="</li>";}
     return html;
   }
+  // 본문 미리보기에서 URL을 새 창 링크로 변환(태그/속성은 건드리지 않음)
+  function linkify(html){
+    return html.replace(/(<[^>]+>)|([^<]+)/g,function(_,tag,txt){
+      if(tag)return tag;
+      return txt.replace(/(https?:\/\/[^\s<>"'`)\]]+|www\.[a-z0-9][^\s<>"'`)\]]+)/gi,function(u){
+        var tail="",mm=u.match(/[.,!?]+$/);if(mm){tail=mm[0];u=u.slice(0,u.length-tail.length);}
+        var href=/^www\./i.test(u)?"https://"+u:u;
+        return '<a href="'+href+'" target="_blank" rel="noopener noreferrer">'+u+'</a>'+tail;
+      });
+    });
+  }
   function mdToHtml(src){ if(!src||!src.trim())return""; const L=src.replace(/\r/g,"").split("\n"); let html="",i=0,m;
     function isPlain(s){return !/^\s*$/.test(s)&&!/^```/.test(s)&&!/^#{1,4}\s+/.test(s)&&!/^>\s?/.test(s)&&!/^\s*[-*]\s+/.test(s)&&!/^\s*\d+\.\s+/.test(s)&&!/^(---|\*\*\*|___)\s*$/.test(s)&&!/^<!--/.test(s)&&!/^!\[/.test(s)&&!/^\s*\|.*\|\s*$/.test(s);}
     while(i<L.length){ const line=L[i];
@@ -639,7 +650,7 @@ function runApp(signal, created) {
       if(listLineInfo(line)){const items=[];while(i<L.length){const inf=listLineInfo(L[i]);if(!inf)break;items.push(inf);i++;}html+=listToHtml(items);continue;}
       const para=[];while(i<L.length&&isPlain(L[i])){para.push(inlineMd(L[i]));i++;}
       if(para.length)html+="<p>"+para.join("<br>")+"</p>"; else i++;
-    } return html;
+    } return linkify(html);
   }
 
   // 슬래시 메뉴 (노션 블록 전체) + 단축키 힌트 (#7)
@@ -1231,6 +1242,7 @@ function runApp(signal, created) {
 
   /* 릴리즈 내역 */
   const CHANGELOG=[
+    {v:"1.1.38",items:["본문의 URL을 자동 링크로 — 클릭하면 새 창에서 열림(카드 수정과 충돌 없이)"]},
     {v:"1.1.37",items:["Slack 붙여넣기 대응 강화 — 평평한 목록(li data-stringify-indent)의 들여쓰기/번호를 인식, HTML 변환이 애매하면 평문으로 자동 폴백"]},
     {v:"1.1.36",items:["Slack·Notion·웹·이 앱에서 복사한 리치 텍스트를 붙여넣으면 목록·번호·제목·체크리스트·인용·표가 그대로 블록으로 변환(중첩 들여쓰기 포함)","평문 붙여넣기도 •·◦·▪ 같은 글머리 기호를 글머리 목록으로 인식"]},
     {v:"1.1.35",items:["알림 아이콘(⏰·✅) 제거 — (1차)·(2차)…·(완료) 텍스트 배지로 표시"]},
@@ -1697,6 +1709,7 @@ function runApp(signal, created) {
   function render(){updateStats();paintLeaveBtn();updateControls();if(viewMode==="kanban")renderKanban();else if(viewMode==="calendar")renderCalendarView();else if(viewMode==="dash")renderDashboard();else renderListCards();}
 
   $("view").addEventListener("click",function(e){
+    const lnk=e.target.closest("a[href]");if(lnk){e.stopPropagation();return;}
     const sw=e.target.closest("[data-cal]");if(sw){const k=sw.dataset.cal;if(k==="weekday")calDays=calDays==="weekday"?"all":"weekday";else if(k==="hidedone")calHideDone=!calHideDone;saveSettings();render();return;}
     const b=e.target.closest("[data-act]");if(!b)return;const host=b.closest("[data-id]");
     const a=b.dataset.act;
