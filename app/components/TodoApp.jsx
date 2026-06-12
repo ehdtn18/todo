@@ -736,7 +736,15 @@ function runApp(signal, created) {
     editorEl.addEventListener("compositionstart",function(){composing=true;});
     editorEl.addEventListener("compositionend",function(){composing=false;});
     // 붙여넣기: 서식 깨짐 방지 — 일반 텍스트로만 삽입
-    editorEl.addEventListener("paste",function(e){const cd=e.clipboardData||window.clipboardData;if(!cd)return;e.preventDefault();const text=(cd.getData("text/plain")||"").replace(/\r/g,"");if(!text)return;const cur=currentBlock();const plainTarget=cur&&(cur.dataset.type==="confirm"||cur.classList.contains("codeblock")||cur.classList.contains("tableblock"));const looksMd=text.indexOf("\n")>=0||/^(\s*[-*]\s|\s*\d+\.\s|#{1,4}\s|>\s|\s*-\s*\[[ xX]\]\s)/.test(text);if(plainTarget||!looksMd){const sel=window.getSelection();if(sel&&!sel.isCollapsed)document.execCommand("delete");document.execCommand("insertText",false,text);return;}const blocks=mdToBlocks(text);if(!blocks.length){document.execCommand("insertText",false,text);return;}insertBlocksAtCaret(blocks);});
+    editorEl.addEventListener("paste",function(e){const cd=e.clipboardData||window.clipboardData;if(!cd)return;e.preventDefault();
+      const cur=currentBlock();const plainTarget=cur&&(cur.dataset.type==="confirm"||cur.classList.contains("codeblock")||cur.classList.contains("tableblock"));
+      const html=cd.getData("text/html");const text=(cd.getData("text/plain")||"").replace(/\r/g,"");
+      // Slack·Notion 등 리치 HTML(목록/제목/인용/표) → 마크다운 변환 후 블록 삽입
+      if(!plainTarget&&html&&/<(ul|ol|li|h[1-6]|blockquote|pre|table)\b/i.test(html)){let md="";try{md=htmlToMd(html);}catch(_){md="";}if(md.trim()){const blocks=mdToBlocks(md);if(blocks.length){insertBlocksAtCaret(blocks);return;}}}
+      if(!text){return;}
+      const looksMd=text.indexOf("\n")>=0||/^(\s*[-*•◦▪–]\s|\s*\d+\.\s|#{1,4}\s|>\s|\s*-\s*\[[ xX]\]\s)/.test(text);
+      if(plainTarget||!looksMd){const sel=window.getSelection();if(sel&&!sel.isCollapsed)document.execCommand("delete");document.execCommand("insertText",false,text);return;}
+      const blocks=mdToBlocks(text);if(!blocks.length){document.execCommand("insertText",false,text);return;}insertBlocksAtCaret(blocks);});
     editorEl.addEventListener("keydown",function(e){
       if(composing||e.isComposing||e.keyCode===229)return;
       if(menuOpen){if(e.key==="ArrowDown"){e.preventDefault();moveActive(1);return;}if(e.key==="ArrowUp"){e.preventDefault();moveActive(-1);return;}if(e.key==="Enter"||e.key==="Tab"){e.preventDefault();chooseActive();return;}if(e.key==="Escape"){e.preventDefault();hideMenu();return;}}
@@ -805,6 +813,45 @@ function runApp(signal, created) {
       });
       return out.join("\n").replace(/\n{3,}/g,"\n\n").replace(/^\n+|\n+$/g,"").trim();
     }
+    // 붙여넣은 리치 HTML(Slack·Notion·웹) → 마크다운 텍스트 (목록·제목·인용·표·굵게 등)
+    function htmlToMd(html){
+      const doc=new DOMParser().parseFromString(html,"text/html");
+      try{doc.body.querySelectorAll("style,script,meta,link,title").forEach(function(n){n.remove();});}catch(_){}
+      const out=[];
+      function inline(node){let s="";node.childNodes.forEach(function(n){
+        if(n.nodeType===3){s+=n.nodeValue.replace(/\s+/g," ");}
+        else if(n.nodeType===1){const tag=n.nodeName.toLowerCase();
+          if(tag==="br")s+="\n";
+          else if(tag==="strong"||tag==="b"){const x=inline(n);s+=x.trim()?"**"+x+"**":x;}
+          else if(tag==="em"||tag==="i"){const x=inline(n);s+=x.trim()?"*"+x+"*":x;}
+          else if(tag==="code"){s+="`"+inline(n)+"`";}
+          else if(tag==="s"||tag==="del"||tag==="strike"){const x=inline(n);s+=x.trim()?"~~"+x+"~~":x;}
+          else s+=inline(n);
+        }});return s;}
+      function liText(li){const c=li.cloneNode(true);try{c.querySelectorAll("ul,ol,.oln,.tbx").forEach(function(x){x.remove();});}catch(_){}return inline(c).replace(/\n+/g," ").trim();}
+      function walkList(list,indent,ordered){ordered=ordered||(list.classList&&list.classList.contains("mdol"));const isTodo=list.classList&&list.classList.contains("mdtodo");let idx=1;Array.prototype.forEach.call(list.children,function(li){if(li.nodeName.toLowerCase()!=="li")return;
+        const text=liText(li);const pre="  ".repeat(indent);const cb=li.querySelector("input[type=checkbox]");const ariaCk=li.getAttribute("aria-checked");
+        if(isTodo){out.push(pre+"- ["+(li.classList.contains("ck")?"x":" ")+"] "+text);}
+        else if(cb||ariaCk!=null){const ck=(cb&&cb.checked)||ariaCk==="true";out.push(pre+"- ["+(ck?"x":" ")+"] "+text);}
+        else if(ordered){out.push(pre+idx+". "+text);idx++;}
+        else out.push(pre+"- "+text);
+        Array.prototype.forEach.call(li.children,function(sub){const st=sub.nodeName.toLowerCase();if(st==="ul"||st==="ol")walkList(sub,indent+1,st==="ol");});
+      });}
+      function block(node){node.childNodes.forEach(function(n){
+        if(n.nodeType===3){const t=n.nodeValue.replace(/\s+/g," ").trim();if(t)out.push(t);return;}
+        if(n.nodeType!==1)return;const tag=n.nodeName.toLowerCase();
+        if(/^h[1-6]$/.test(tag)){const tx=inline(n).trim();if(tx)out.push("#".repeat(Math.min(4,+tag[1]))+" "+tx);}
+        else if(tag==="ul"||tag==="ol"){walkList(n,0,tag==="ol");}
+        else if(tag==="blockquote"){inline(n).split("\n").forEach(function(l){if(l.trim())out.push("> "+l.trim());});}
+        else if(tag==="pre"){out.push("```");(n.textContent||"").replace(/\r/g,"").split("\n").forEach(function(l){out.push(l);});out.push("```");}
+        else if(tag==="hr"){out.push("---");}
+        else if(tag==="table"){let ri=0;n.querySelectorAll("tr").forEach(function(tr){const cells=[];tr.querySelectorAll("th,td").forEach(function(c){cells.push(inline(c).replace(/\n+/g," ").trim()||" ");});if(!cells.length)return;out.push("| "+cells.join(" | ")+" |");if(ri===0)out.push("| "+cells.map(function(){return "---";}).join(" | ")+" |");ri++;});}
+        else if(n.querySelector&&n.querySelector("ul,ol,h1,h2,h3,h4,h5,h6,blockquote,pre,table")){block(n);}
+        else{const t=inline(n);t.split("\n").forEach(function(l){if(l.trim())out.push(l.trim());});}
+      });}
+      block(doc.body);
+      return out.join("\n");
+    }
     // 마크다운 텍스트 → 블록 엘리먼트 배열 (붙여넣기 변환용; loadMarkdown과 동일 규칙)
     function mdToBlocks(md){
       const L=md.replace(/\r/g,"").split("\n");const out=[];let i=0,m;
@@ -824,7 +871,7 @@ function runApp(signal, created) {
         if(m=line.match(/^(\s*)-\s*\[([ xX])\]\s+(.*)$/)){mk("todo",inlineMd(m[3]),m[2].toLowerCase()==="x",lvl(m[1]));i++;continue;}
         if(/^>\s?/.test(line)){mk("quote",inlineMd(line.replace(/^>\s?/,"")));i++;continue;}
         if(/^\s*\|.*\|\s*$/.test(line)&&i+1<L.length&&/^\s*\|[-:\s|]+\|\s*$/.test(L[i+1])){const head=splitRow(line);i+=2;const body=[];while(i<L.length&&/^\s*\|.*\|\s*$/.test(L[i])){body.push(splitRow(L[i]));i++;}out.push(tableEl([head].concat(body)));continue;}
-        if(m=line.match(/^(\s*)[-*]\s+(.*)$/)){mk("ul",inlineMd(m[2]),false,lvl(m[1]));i++;continue;}
+        if(m=line.match(/^(\s*)[-*•◦▪–]\s+(.*)$/)){mk("ul",inlineMd(m[2]),false,lvl(m[1]));i++;continue;}
         if(m=line.match(/^(\s*)\d+\.\s+(.*)$/)){mk("ol",inlineMd(m[2]),false,lvl(m[1]));i++;continue;}
         mk("p",inlineMd(line));i++;
       }
@@ -1181,6 +1228,7 @@ function runApp(signal, created) {
 
   /* 릴리즈 내역 */
   const CHANGELOG=[
+    {v:"1.1.36",items:["Slack·Notion·웹·이 앱에서 복사한 리치 텍스트를 붙여넣으면 목록·번호·제목·체크리스트·인용·표가 그대로 블록으로 변환(중첩 들여쓰기 포함)","평문 붙여넣기도 •·◦·▪ 같은 글머리 기호를 글머리 목록으로 인식"]},
     {v:"1.1.35",items:["알림 아이콘(⏰·✅) 제거 — (1차)·(2차)…·(완료) 텍스트 배지로 표시"]},
     {v:"1.1.34",items:["지난 날짜(어제 이하) 알림은 자동 삭제하고 오늘 알림만 유지 — 같은 업무가 날짜별로 반복돼도 어제 건 사라지고 오늘 건만 표시"]},
     {v:"1.1.33",items:["n차 컨펌 날짜가 되면 알림 발생(완료된 컨펌 제외, 알림 시각·켜짐 설정 따름)"]},
