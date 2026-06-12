@@ -739,10 +739,10 @@ function runApp(signal, created) {
     editorEl.addEventListener("paste",function(e){const cd=e.clipboardData||window.clipboardData;if(!cd)return;e.preventDefault();
       const cur=currentBlock();const plainTarget=cur&&(cur.dataset.type==="confirm"||cur.classList.contains("codeblock")||cur.classList.contains("tableblock"));
       const html=cd.getData("text/html");const text=(cd.getData("text/plain")||"").replace(/\r/g,"");
-      // Slack·Notion 등 리치 HTML(목록/제목/인용/표) → 마크다운 변환 후 블록 삽입
-      if(!plainTarget&&html&&/<(ul|ol|li|h[1-6]|blockquote|pre|table)\b/i.test(html)){let md="";try{md=htmlToMd(html);}catch(_){md="";}if(md.trim()){const blocks=mdToBlocks(md);if(blocks.length){insertBlocksAtCaret(blocks);return;}}}
+      // Slack·Notion·웹 등 리치 HTML → 마크다운 변환. 변환 결과에 목록/제목/인용 등 구조가 있으면 블록 삽입(없으면 평문으로 폴백)
+      if(!plainTarget&&html){let md="";try{md=htmlToMd(html);}catch(_){md="";}if(md.trim()&&/(^|\n)[ \t]*([-*]\s|\d+\.\s|#{1,4}\s|>\s)/.test(md)){const blocks=mdToBlocks(md);if(blocks.length){insertBlocksAtCaret(blocks);return;}}}
       if(!text){return;}
-      const looksMd=text.indexOf("\n")>=0||/^(\s*[-*•◦▪–]\s|\s*\d+\.\s|#{1,4}\s|>\s|\s*-\s*\[[ xX]\]\s)/.test(text);
+      const looksMd=text.indexOf("\n")>=0||/^(\s*[-*•◦▪‣·∙–—]\s|\s*\d+\.\s|#{1,4}\s|>\s|\s*-\s*\[[ xX]\]\s)/.test(text);
       if(plainTarget||!looksMd){const sel=window.getSelection();if(sel&&!sel.isCollapsed)document.execCommand("delete");document.execCommand("insertText",false,text);return;}
       const blocks=mdToBlocks(text);if(!blocks.length){document.execCommand("insertText",false,text);return;}insertBlocksAtCaret(blocks);});
     editorEl.addEventListener("keydown",function(e){
@@ -829,13 +829,16 @@ function runApp(signal, created) {
           else s+=inline(n);
         }});return s;}
       function liText(li){const c=li.cloneNode(true);try{c.querySelectorAll("ul,ol,.oln,.tbx").forEach(function(x){x.remove();});}catch(_){}return inline(c).replace(/\n+/g," ").trim();}
-      function walkList(list,indent,ordered){ordered=ordered||(list.classList&&list.classList.contains("mdol"));const isTodo=list.classList&&list.classList.contains("mdtodo");let idx=1;Array.prototype.forEach.call(list.children,function(li){if(li.nodeName.toLowerCase()!=="li")return;
-        const text=liText(li);const pre="  ".repeat(indent);const cb=li.querySelector("input[type=checkbox]");const ariaCk=li.getAttribute("aria-checked");
+      function walkList(list,baseIndent,ordered){ordered=ordered||(list.classList&&list.classList.contains("mdol"));const isTodo=list.classList&&list.classList.contains("mdtodo");const counters=[];Array.prototype.forEach.call(list.children,function(li){if(li.nodeName.toLowerCase()!=="li")return;
+        // Slack은 중첩 ul 대신 li 의 data-stringify-indent 로 깊이를 표현(평평한 ul)
+        const si=parseInt(li.getAttribute("data-stringify-indent")||li.getAttribute("aria-level")||"",10);
+        const lvl=baseIndent+(isNaN(si)?0:Math.max(0,si));
+        const text=liText(li);const pre="  ".repeat(lvl);const cb=li.querySelector("input[type=checkbox]");const ariaCk=li.getAttribute("aria-checked");
         if(isTodo){out.push(pre+"- ["+(li.classList.contains("ck")?"x":" ")+"] "+text);}
         else if(cb||ariaCk!=null){const ck=(cb&&cb.checked)||ariaCk==="true";out.push(pre+"- ["+(ck?"x":" ")+"] "+text);}
-        else if(ordered){out.push(pre+idx+". "+text);idx++;}
+        else if(ordered){counters[lvl]=(counters[lvl]||0)+1;for(let k=lvl+1;k<counters.length;k++)counters[k]=0;out.push(pre+counters[lvl]+". "+text);}
         else out.push(pre+"- "+text);
-        Array.prototype.forEach.call(li.children,function(sub){const st=sub.nodeName.toLowerCase();if(st==="ul"||st==="ol")walkList(sub,indent+1,st==="ol");});
+        Array.prototype.forEach.call(li.children,function(sub){const st=sub.nodeName.toLowerCase();if(st==="ul"||st==="ol")walkList(sub,lvl+1,st==="ol");});
       });}
       function block(node){node.childNodes.forEach(function(n){
         if(n.nodeType===3){const t=n.nodeValue.replace(/\s+/g," ").trim();if(t)out.push(t);return;}
@@ -871,7 +874,7 @@ function runApp(signal, created) {
         if(m=line.match(/^(\s*)-\s*\[([ xX])\]\s+(.*)$/)){mk("todo",inlineMd(m[3]),m[2].toLowerCase()==="x",lvl(m[1]));i++;continue;}
         if(/^>\s?/.test(line)){mk("quote",inlineMd(line.replace(/^>\s?/,"")));i++;continue;}
         if(/^\s*\|.*\|\s*$/.test(line)&&i+1<L.length&&/^\s*\|[-:\s|]+\|\s*$/.test(L[i+1])){const head=splitRow(line);i+=2;const body=[];while(i<L.length&&/^\s*\|.*\|\s*$/.test(L[i])){body.push(splitRow(L[i]));i++;}out.push(tableEl([head].concat(body)));continue;}
-        if(m=line.match(/^(\s*)[-*•◦▪–]\s+(.*)$/)){mk("ul",inlineMd(m[2]),false,lvl(m[1]));i++;continue;}
+        if(m=line.match(/^(\s*)[-*•◦▪‣·∙–—]\s+(.*)$/)){mk("ul",inlineMd(m[2]),false,lvl(m[1]));i++;continue;}
         if(m=line.match(/^(\s*)\d+\.\s+(.*)$/)){mk("ol",inlineMd(m[2]),false,lvl(m[1]));i++;continue;}
         mk("p",inlineMd(line));i++;
       }
@@ -1228,6 +1231,7 @@ function runApp(signal, created) {
 
   /* 릴리즈 내역 */
   const CHANGELOG=[
+    {v:"1.1.37",items:["Slack 붙여넣기 대응 강화 — 평평한 목록(li data-stringify-indent)의 들여쓰기/번호를 인식, HTML 변환이 애매하면 평문으로 자동 폴백"]},
     {v:"1.1.36",items:["Slack·Notion·웹·이 앱에서 복사한 리치 텍스트를 붙여넣으면 목록·번호·제목·체크리스트·인용·표가 그대로 블록으로 변환(중첩 들여쓰기 포함)","평문 붙여넣기도 •·◦·▪ 같은 글머리 기호를 글머리 목록으로 인식"]},
     {v:"1.1.35",items:["알림 아이콘(⏰·✅) 제거 — (1차)·(2차)…·(완료) 텍스트 배지로 표시"]},
     {v:"1.1.34",items:["지난 날짜(어제 이하) 알림은 자동 삭제하고 오늘 알림만 유지 — 같은 업무가 날짜별로 반복돼도 어제 건 사라지고 오늘 건만 표시"]},
