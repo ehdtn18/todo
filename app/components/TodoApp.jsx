@@ -1143,11 +1143,13 @@ function runApp(signal, created) {
 
   /* 연차 (annual leave) — 연 15일(120h), 2시간 단위, 주말·공휴일 제외 */
   const wdNames=["일","월","화","수","목","금","토"];
-  function leaveLabel(h){return ({2:"반반차",4:"반차",6:"3/4연차",8:"연차"})[h]||(h+"시간");}
-  function hToDays(h){h=Math.max(0,h);const d=Math.floor(h/8),r=h%8;if(!d&&!r)return "0";return (d?d+"일":"")+(r?(d?" ":"")+r+"시간":"");}
+  // 음수 hours = 보상시간(주말근무 등) — 사용량에서 빼서 잔여를 늘린다
+  function leaveLabel(h){if(h<0)return "보상시간";return ({2:"반반차",4:"반차",6:"3/4연차",8:"연차"})[h]||hText(h);}
+  function hText(h){const a=Math.abs(h),hr=Math.floor(a),mi=Math.round((a-hr)*60);return ((hr?hr+"시간":"")+(mi?(hr?" ":"")+mi+"분":""))||"0시간";}
+  function hToDays(h){h=Math.max(0,h);const d=Math.floor(h/8),r=h%8;if(!d&&!r)return "0";return (d?d+"일":"")+(r?(d?" ":"")+hText(r):"");}
   function leaveYear(){return (calRef?new Date(calRef+"T00:00:00"):new Date()).getFullYear();}
   function leaveUsed(yr){return leaves.filter(l=>String(l.date).slice(0,4)===String(yr)).reduce((s,l)=>s+(Number(l.hours)||0),0);}
-  function leaveHoursOn(iso){for(let i=0;i<leaves.length;i++)if(leaves[i].date===iso)return leaves[i].hours;return 0;}
+  function leaveHoursOn(iso){for(let i=0;i<leaves.length;i++)if(leaves[i].date===iso&&leaves[i].hours>0)return leaves[i].hours;return 0;}
   function fmtLeaveDate(iso){const p=iso.split("-");const dt=new Date(iso+"T00:00:00");return (+p[1])+"/"+(+p[2])+" ("+wdNames[dt.getDay()]+")";}
   function paintLeaveBtn(){const rem=LEAVE_HOURS-leaveUsed(leaveYear());const b=$("leaveBtn");if(b)b.title="연차 "+hToDays(rem)+" 남음";}
   // 단일일/기간 판별 — 같은 날(또는 시작만)이면 단일일, 다른 두 날이면 기간(각 평일 1일씩)
@@ -1190,7 +1192,7 @@ function runApp(signal, created) {
     $("lvYear").textContent="· "+yr+"년";
     $("lvSummary").innerHTML='<div class="lv-rem">남은 연차 <b>'+hToDays(rem)+'</b></div><div class="lv-sub">올해 사용 '+hToDays(used)+' · 총 '+LEAVE_DAYS+'일('+LEAVE_HOURS+'h)</div>';
     const list=leaves.filter(l=>String(l.date).slice(0,4)===String(yr)).slice().sort((a,b)=>a.date>b.date?-1:1);
-    $("lvList").innerHTML=list.length?list.map(function(l){return '<div class="trashitem" data-id="'+l.id+'"><div class="ti-main"><div class="ti-title">'+esc(fmtLeaveDate(l.date))+'</div><div class="ti-sub">'+leaveLabel(l.hours)+' · '+l.hours+'시간</div></div><div class="ti-acts"><button class="btn-danger ti-btn" data-lvact="del">삭제</button></div></div>';}).join(""):'<div class="empty" style="padding:26px 10px"><p>사용한 연차가 없어요</p></div>';
+    $("lvList").innerHTML=list.length?list.map(function(l){return '<div class="trashitem" data-id="'+l.id+'"><div class="ti-main"><div class="ti-title">'+esc(fmtLeaveDate(l.date))+'</div><div class="ti-sub">'+leaveLabel(l.hours)+' · '+(l.hours<0?"+":"")+hText(l.hours)+'</div></div><div class="ti-acts"><button class="btn-danger ti-btn" data-lvact="del">삭제</button></div></div>';}).join(""):'<div class="empty" style="padding:26px 10px"><p>사용한 연차가 없어요</p></div>';
   }
   function addLeave(){
     if(!lvRange.start){toast("시작일을 선택해 주세요",true);return;}
@@ -1252,6 +1254,7 @@ function runApp(signal, created) {
 
   /* 릴리즈 내역 */
   const CHANGELOG=[
+    {v:"1.1.40",items:["연차에 보상시간 반영(주말근무 등) — 사용내역에 '보상시간 +N'으로 표시되고 잔여가 늘어남","30분 단위 표기 지원(예: 5일 6시간 30분)"]},
     {v:"1.1.39",items:["표: 행/열 추가·삭제 버튼 추가, Tab으로 셀 이동(마지막 칸에서 Tab이면 행 추가)","Notion·Claude 등에서 표를 복붙하면 표로 생성되도록 수정"]},
     {v:"1.1.38",items:["본문의 URL을 자동 링크로 — 클릭하면 새 창에서 열림(카드 수정과 충돌 없이)"]},
     {v:"1.1.37",items:["Slack 붙여넣기 대응 강화 — 평평한 목록(li data-stringify-indent)의 들여쓰기/번호를 인식, HTML 변환이 애매하면 평문으로 자동 폴백"]},
@@ -1710,7 +1713,7 @@ function runApp(signal, created) {
     let now="";if(day===todayISO()){const n=new Date();const nm=n.getHours()*60+n.getMinutes();now='<div class="cv-now" style="top:'+(nm/60*HH)+'px"></div>';}
     const blocks=items.map(function(it){const top=it.sM/60*HH,h=Math.max(24,(it.eM-it.sM)/60*HH);const w=100/laneN,left=it.lane*w;let cls="cv-evt";if(it.t.done)cls+=" done";else if(classify(it.t)==="doing")cls+=" doing";const tm=(day===it.t.start?it.t.startTime:"00:00")+" ~ "+(day===it.t.end?it.t.endTime:"24:00");return '<div class="'+cls+'" data-act="e" data-id="'+it.t.id+'" style="top:'+top+'px;height:'+h+'px;left:calc('+left+'% + 56px + 3px);width:calc('+w+'% - 8px)"><div class="cv-et">'+esc(ownerTag(it.t)+it.t.title)+'</div><div class="cv-etm">'+tm+'</div></div>';}).join("");
     const dlvh=leaveHoursOn(day);
-    let html='<div class="calview">'+calToolbar(false)+(dlvh?'<div class="cv-dayleave">🏖 연차 — '+leaveLabel(dlvh)+' ('+dlvh+'시간)</div>':"")+'<div class="cv-day" style="height:'+totalH+'px">'+grid+now+blocks+(items.length?"":'<div class="cv-day-empty">이 날짜에 일정이 없어요</div>')+'</div></div>';
+    let html='<div class="calview">'+calToolbar(false)+(dlvh?'<div class="cv-dayleave">🏖 연차 — '+leaveLabel(dlvh)+' ('+hText(dlvh)+')</div>':"")+'<div class="cv-day" style="height:'+totalH+'px">'+grid+now+blocks+(items.length?"":'<div class="cv-day-empty">이 날짜에 일정이 없어요</div>')+'</div></div>';
     $("view").innerHTML=html;
   }
 
